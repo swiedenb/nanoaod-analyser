@@ -34,7 +34,7 @@ float invariant_mass(	const float& part1_pt,
 						const float& part2_mass);
 
 // Calculate invariant mass from two highest pt particles, which fulfil mask
-float invariant_mass2(	const rvec<float>& p1_pt,
+float invariant_mass(	const rvec<float>& p1_pt,
 						const rvec<float>& p2_pt,
 						const rvec<float>& p1_eta,
 						const rvec<float>& p2_eta,
