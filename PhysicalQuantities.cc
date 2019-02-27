@@ -1,10 +1,6 @@
 #include "PhysicalQuantities.hh"
 #include "TLorentzVector.h"
 
-#include <TROOT.h>
-#include <ROOT/RDataFrame.hxx>
-#include <ROOT/RDFHelpers.hxx>
-#include <ROOT/RVec.hxx>
 #include <math.h>
 
 // Calculate MT from one particle and MET
