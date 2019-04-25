@@ -1,6 +1,6 @@
 #include "event_cleaner.hh"
 
-// Check if run number and lumi ranges are in json.txt - still need to write
+// Json Cleaning
 bool json_check(const UInt_t& runnumber, const UInt_t& luminumber) {
 	std::string runnumber_string = std::to_string(runnumber);
 	char const *runnumber_char = runnumber_string.c_str();
@@ -14,6 +14,8 @@ bool json_check(const UInt_t& runnumber, const UInt_t& luminumber) {
 	return false;
 };
 
+
+// Gen Cleaning
 bool clean_gen_file(const rvec<int>& pdgID, const rvec<float>& mass) {
 	if (config::gen_pdgID == 0)
 		return true;

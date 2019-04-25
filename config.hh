@@ -2,6 +2,7 @@
 #define CONFIG_H
 
 #include "include/json.hpp"
+#include <TH1.h>
 using json = nlohmann::json;
 
 namespace config {
@@ -16,6 +17,8 @@ namespace config {
     extern std::string cut_type;
     extern float cut_value_min;
     extern float cut_value_max;
+    
+    extern TH1D* pileup_hist;
     
     bool load_config_file(json cfg);
 }

@@ -1,6 +1,8 @@
 #include "config.hh"
 #include <fstream>
 #include <sstream>
+#include <TFile.h>
+#include <TROOT.h>
 
 namespace config {
 	// set default values for all used quantities
@@ -24,6 +26,9 @@ namespace config {
     std::string cut_type = "";
     float cut_value_min = 0;
     float cut_value_max = 999999;
+    
+    // pileup hist
+    TH1D* pileup_hist = NULL;
 }
 
 bool config::load_config_file(json cfg)
@@ -51,5 +56,7 @@ bool config::load_config_file(json cfg)
     cut_value_min = cfg["gen_cut_min"];
     cut_value_max = cfg["gen_cut_max"];
     
+    TFile* pileup_file = new TFile(((std::string) cfg["pileup_file"]).c_str(), "READ");
+    pileup_hist = (TH1D*) pileup_file->Get("pileup");
     
 }
