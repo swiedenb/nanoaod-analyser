@@ -14,13 +14,13 @@ rvec<bool> tau_acceptance_and_id(	const rvec<float>& pt,
 	auto mask_eta = abs(eta) < config::tau_eta;
 	
 	// tau iso requirement (1: VVLoose, 2: VLoose, 4: Loose, 8: Medium, 16: Tight, 32: VTight, 64: VVTight)
-	auto mask_iso = (iso & *config::tau_iso_WP) != 0;
+	auto mask_iso = (iso & config::tau_iso_WP) == config::tau_iso_WP;
 	
 	// Anti Electron discriminator (1: VLoose, 2: Loose, 4: Medium, 8: Tight, 16: VTight)
-	auto mask_antiele = (*config::tau_antiE_WP & antiEle_disc) != 0;
+	auto mask_antiele = (config::tau_antiE_WP & antiEle_disc) == config::tau_antiE_WP;
 	
 	// Anti Muon discriminator (1: Loose, 2: Tight)
-	auto mask_antimu = (*config::tau_antiMu_WP & antiMu_disc) != 0;
+	auto mask_antimu = (config::tau_antiMu_WP & antiMu_disc) == config::tau_antiMu_WP;
 	
 	// return vector with true, if particle fulfils all requirements - else false
 	return mask_pt & mask_eta & mask_iso & mask_antiele & mask_antimu;
@@ -32,10 +32,10 @@ rvec<bool> muon_acceptance_and_id(	const rvec<float>& pt,
 									const rvec<bool>& id, 
 									const rvec<float>& iso) {
 	// muon pt cut
-	auto mask_pt = pt > 20;
+	auto mask_pt = pt > config::muon_pt;
 	
 	// muon eta cut
-	auto mask_eta = abs(eta) < 2.4;
+	auto mask_eta = abs(eta) < config::muon_eta;
 	
     // muon id
     auto mask_id = id;
@@ -63,4 +63,73 @@ rvec<bool> ele_acceptance_and_id(	const rvec<float>& pt,
 	
 	// return vector with true, if particle fulfils all requirements - else false
 	return mask_pt & mask_eta & mask_id;
+};
+
+
+// apply tau energy scale
+RNode apply_tau_energy_scale(	RNode df,
+								const rvec<float>& tau_decayMode,
+								const rvec<float>& tau_pt,
+								const rvec<float>& tau_eta,
+								const rvec<float>& tau_phi,
+								const rvec<float>& tau_mass) {	
+	rvec<float> new_tau_pt;				
+	rvec<float> new_tau_eta;				
+	rvec<float> new_tau_phi;				
+	rvec<float> new_tau_mass;				
+	
+	for (uint i = 0; i<tau_pt.size(); i++) {
+		if (tau_pt[i] > 400)
+			new_tau_pt.push_back(tau_pt[i]);
+			new_tau_eta.push_back(tau_eta[i]);
+			new_tau_phi.push_back(tau_phi[i]);
+			new_tau_mass.push_back(tau_mass[i]);
+			continue;
+		
+		ROOT::Math::PtEtaPhiMVector p1(tau_pt[i], tau_eta[i], tau_phi[i], tau_mass[i]);
+		
+		if (tau_decayMode == 0) {
+			if (config::run_type == "")
+				p1 *= (config::tau_energy_scale_0)[1];
+			if (config::run_type == "_TauEnergyScaleUp")
+				p1 *= (config::tau_energy_scale_0)[0];
+			if (config::run_type == "_TauEnergyScaleDown")
+				p1 *= (config::tau_energy_scale_0)[2];
+		} else if ((tau_decayMode == 1) or (tau_decayMode == 2)) {
+			if (config::run_type == "")
+				p1 *= (config::tau_energy_scale_1)[1];
+			if (config::run_type == "_TauEnergyScaleUp")
+				p1 *= (config::tau_energy_scale_1)[0];
+			if (config::run_type == "_TauEnergyScaleDown")
+				p1 *= (config::tau_energy_scale_1)[2];
+		} else if (tau_decayMode == 10) {
+			if (config::run_type == "")
+				p1 *= (config::tau_energy_scale_10)[1];
+			if (config::run_type == "_TauEnergyScaleUp")
+				p1 *= (config::tau_energy_scale_10)[0];
+			if (config::run_type == "_TauEnergyScaleDown")
+				p1 *= (config::tau_energy_scale_10)[2];
+		} else if (tau_decayMode == 11) {
+			if (config::run_type == "")
+				p1 *= (config::tau_energy_scale_11)[1];
+			if (config::run_type == "_TauEnergyScaleUp")
+				p1 *= (config::tau_energy_scale_11)[0];
+			if (config::run_type == "_TauEnergyScaleDown")
+				p1 *= (config::tau_energy_scale_11)[2];
+		}
+		
+		
+		
+		new_tau_pt.push_back(p1.Pt());
+		new_tau_eta.push_back(p1.Eta());
+		new_tau_phi.push_back(p1.Phi());
+		new_tau_mass.push_back(p1.M());
+	}
+	
+	auto df = df.Define("Tau_pt_ES", [new_tau_pt](){return new_tau_pt;})
+				.Define("Tau_eta_ES", [new_tau_eta](){return new_tau_eta;})
+				.Define("Tau_phi_ES", [new_tau_phi](){return new_tau_phi;});
+				.Define("Tau_mass_ES", [new_tau_mass](){return new_tau_mass;});
+									
+									
 };

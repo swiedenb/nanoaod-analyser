@@ -8,10 +8,12 @@ using json = nlohmann::json;
 namespace config {
 	extern float tau_pt;
 	extern float tau_eta;
+	extern float muon_pt;
+	extern float muon_eta;
 	extern float met_pt;
-    extern char tau_iso_WP[10];
-    extern char tau_antiE_WP[10];
-    extern char tau_antiMu_WP[10];
+    extern uint tau_iso_WP;
+    extern uint tau_antiE_WP;
+    extern uint tau_antiMu_WP;
     
     extern int gen_pdgID;
     extern std::string cut_type;

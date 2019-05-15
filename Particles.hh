@@ -10,6 +10,7 @@
 
 template < typename T >
 using rvec = ROOT::VecOps::RVec<T>;
+using RNode = ROOT::RDF::RNode;
 
 rvec<bool> tau_acceptance_and_id(	const rvec<float>& pt, 
 									const rvec<float>& eta, 
@@ -27,5 +28,12 @@ rvec<bool> muon_acceptance_and_id(	const rvec<float>& pt,
 rvec<bool> ele_acceptance_and_id(	const rvec<float>& pt,
 									const rvec<float>& eta,
 									const rvec<Int_t>& id);
+									
+RNode apply_tau_energy_scale(	RNode df,
+								const rvec<float>& tau_decayMode,
+								const rvec<float>& tau_pt,
+								const rvec<float>& tau_eta,
+								const rvec<float>& tau_phi,
+								const rvec<float>& tau_mass);
 
 #endif
