@@ -3,6 +3,7 @@
 
 #include "include/json.hpp"
 #include <TH1.h>
+#include <map>
 using json = nlohmann::json;
 
 namespace config {
@@ -32,6 +33,8 @@ namespace config {
     extern double tau_scale;
     extern double tau_scale_up;
     extern double tau_scale_down;
+    
+    extern std::map< std::string, std::vector< double > > tau_energy_scale;
 }
 
 #endif

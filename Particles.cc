@@ -86,39 +86,38 @@ RNode apply_tau_energy_scale(	RNode df,
 			new_tau_mass.push_back(tau_mass[i]);
 			continue;
 		
-		ROOT::Math::PtEtaPhiMVector p1(tau_pt[i], tau_eta[i], tau_phi[i], tau_mass[i]);
+		TLorentzVector p1, p2; 
+		p1.SetPtEtaPhiM(tau_pt[i], tau_eta[i], tau_phi[i], tau_mass[i]);
 		
-		if (tau_decayMode == 0) {
+		if (tau_decayMode[i] == 0) {										// this is one prong decay
 			if (config::run_type == "")
-				p1 *= (config::tau_energy_scale_0)[1];
+				p1 *= (config::tau_energy_scale["h+-"])[1];
 			if (config::run_type == "_TauEnergyScaleUp")
-				p1 *= (config::tau_energy_scale_0)[0];
+				p1 *= (config::tau_energy_scale["h+-"])[0];
 			if (config::run_type == "_TauEnergyScaleDown")
-				p1 *= (config::tau_energy_scale_0)[2];
-		} else if ((tau_decayMode == 1) or (tau_decayMode == 2)) {
+				p1 *= (config::tau_energy_scale["h+-"])[2];
+		} else if ((tau_decayMode[i] == 1) or (tau_decayMode[i] == 2)) {	// this is one prong decay with additional pi0s
 			if (config::run_type == "")
-				p1 *= (config::tau_energy_scale_1)[1];
+				p1 *= (config::tau_energy_scale["h+- pi0s"])[1];
 			if (config::run_type == "_TauEnergyScaleUp")
-				p1 *= (config::tau_energy_scale_1)[0];
+				p1 *= (config::tau_energy_scale["h+- pi0s"])[0];
 			if (config::run_type == "_TauEnergyScaleDown")
-				p1 *= (config::tau_energy_scale_1)[2];
-		} else if (tau_decayMode == 10) {
+				p1 *= (config::tau_energy_scale["h+- pi0s"])[2];
+		} else if (tau_decayMode[i] == 10) {								// this is three prong decay
 			if (config::run_type == "")
-				p1 *= (config::tau_energy_scale_10)[1];
+				p1 *= (config::tau_energy_scale["h+-h+-h+-"])[1];
 			if (config::run_type == "_TauEnergyScaleUp")
-				p1 *= (config::tau_energy_scale_10)[0];
+				p1 *= (config::tau_energy_scale["h+-h+-h+-"])[0];
 			if (config::run_type == "_TauEnergyScaleDown")
-				p1 *= (config::tau_energy_scale_10)[2];
-		} else if (tau_decayMode == 11) {
+				p1 *= (config::tau_energy_scale["h+-h+-h+-"])[2];
+		} else if (tau_decayMode[i] == 11) {								// this is one prong decay with additional pi0s
 			if (config::run_type == "")
-				p1 *= (config::tau_energy_scale_11)[1];
+				p1 *= (config::tau_energy_scale["h+-h+-h+- pi0s"])[1];
 			if (config::run_type == "_TauEnergyScaleUp")
-				p1 *= (config::tau_energy_scale_11)[0];
+				p1 *= (config::tau_energy_scale["h+-h+-h+- pi0s"])[0];
 			if (config::run_type == "_TauEnergyScaleDown")
-				p1 *= (config::tau_energy_scale_11)[2];
+				p1 *= (config::tau_energy_scale["h+-h+-h+- pi0s"])[2];
 		}
-		
-		
 		
 		new_tau_pt.push_back(p1.Pt());
 		new_tau_eta.push_back(p1.Eta());
@@ -126,10 +125,11 @@ RNode apply_tau_energy_scale(	RNode df,
 		new_tau_mass.push_back(p1.M());
 	}
 	
-	auto df = df.Define("Tau_pt_ES", [new_tau_pt](){return new_tau_pt;})
+	df = df.Define("Tau_pt_ES", [new_tau_pt](){return new_tau_pt;})
 				.Define("Tau_eta_ES", [new_tau_eta](){return new_tau_eta;})
-				.Define("Tau_phi_ES", [new_tau_phi](){return new_tau_phi;});
+				.Define("Tau_phi_ES", [new_tau_phi](){return new_tau_phi;})
 				.Define("Tau_mass_ES", [new_tau_mass](){return new_tau_mass;});
 									
-									
+	
+	return df;
 };

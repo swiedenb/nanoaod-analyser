@@ -52,6 +52,14 @@ namespace config {
     double tau_scale = 1.0;
     double tau_scale_up = 1.0;
     double tau_scale_down = 1.0;
+    
+    // tau energy scale
+    std::map< std::string, std::vector< double > > tau_energy_scale = {
+							{"h+-", 			{1.0, 1.0, 1.0} },
+							{"h+- pi0s", 		{1.0, 1.0, 1.0} },
+							{"h+-h+-h+-", 		{1.0, 1.0, 1.0} },
+							{"h+-h+-h+- pi0s", 	{1.0, 1.0, 1.0} }
+						};
 }
 
 bool config::load_config_file(json cfg)
@@ -86,6 +94,23 @@ bool config::load_config_file(json cfg)
     if (cfg.find("era") != cfg.end())				era = cfg["era"];
     
     if (!runOnData) { 
+		auto getrightbincontent = [](TH2D* hist, const int binX, const int binY, std::string type) {
+			if (type == "") {
+				return hist->GetBinContent(	hist->GetXaxis()->FindBin( binX ),
+											hist->GetYaxis()->FindBin( binY ) );
+			} else if (type == "Up") {
+				return hist->GetBinContent(	hist->GetXaxis()->FindBin( binX ),
+											hist->GetYaxis()->FindBin( binY ) )
+							+ hist->GetBinErrorUp(	hist->GetXaxis()->FindBin( binX ),
+													hist->GetYaxis()->FindBin( binY ) );
+			} else if (type == "Down") {
+				return hist->GetBinContent(	hist->GetXaxis()->FindBin( binX ),
+											hist->GetYaxis()->FindBin( binY ) )
+							- hist->GetBinErrorLow(	hist->GetXaxis()->FindBin( binX ),
+													hist->GetYaxis()->FindBin( binY ) );
+			}
+			return 1.0;
+		};
 		// read in pileup file
 		TFile* pileup_file = new TFile(((std::string) cfg["pileup_file"]).c_str(), "READ");
 		pileup_hist = (TH1D*) pileup_file->Get("pileup");
@@ -93,18 +118,44 @@ bool config::load_config_file(json cfg)
 		// read in tau scale factor file
 		TFile* tau_scale_file = new TFile(((std::string) cfg["tau_scale_factor_file"]).c_str(), "READ");
 		TH2D* tau_scale_hist = (TH2D*) tau_scale_file->Get("tau_scale_factor");
-		tau_scale = tau_scale_hist->GetBinContent( tau_scale_hist->GetXaxis()->FindBin( tau_iso_WP ),
-												  tau_scale_hist->GetYaxis()->FindBin( era ) );
-		tau_scale_up = tau_scale_hist->GetBinContent( tau_scale_hist->GetXaxis()->FindBin( tau_iso_WP ), 
-													 tau_scale_hist->GetYaxis()->FindBin( era ) ) 
-							+ tau_scale_hist->GetBinErrorUp( tau_scale_hist->GetXaxis()->FindBin( tau_iso_WP ),
-															tau_scale_hist->GetYaxis()->FindBin( era ) );
+		//~ tau_scale = tau_scale_hist->GetBinContent( tau_scale_hist->GetXaxis()->FindBin( tau_iso_WP ),
+												  //~ tau_scale_hist->GetYaxis()->FindBin( era ) );
+		//~ tau_scale_up = tau_scale_hist->GetBinContent( tau_scale_hist->GetXaxis()->FindBin( tau_iso_WP ), 
+													 //~ tau_scale_hist->GetYaxis()->FindBin( era ) ) 
+							//~ + tau_scale_hist->GetBinErrorUp( tau_scale_hist->GetXaxis()->FindBin( tau_iso_WP ),
+															//~ tau_scale_hist->GetYaxis()->FindBin( era ) );
+		//~ tau_scale_down = tau_scale_hist->GetBinContent( tau_scale_hist->GetXaxis()->FindBin( tau_iso_WP ), 
+													 //~ tau_scale_hist->GetYaxis()->FindBin( era ) ) 
+							//~ - tau_scale_hist->GetBinErrorLow( tau_scale_hist->GetXaxis()->FindBin( tau_iso_WP ),
+															//~ tau_scale_hist->GetYaxis()->FindBin( era ) );
 		
-		tau_scale_down = tau_scale_hist->GetBinContent( tau_scale_hist->GetXaxis()->FindBin( tau_iso_WP ), 
-													 tau_scale_hist->GetYaxis()->FindBin( era ) ) 
-							- tau_scale_hist->GetBinErrorLow( tau_scale_hist->GetXaxis()->FindBin( tau_iso_WP ),
-															tau_scale_hist->GetYaxis()->FindBin( era ) );
+		
+		tau_scale = getrightbincontent(tau_scale_hist, tau_iso_WP, era, "");											
+		tau_scale_up = getrightbincontent(tau_scale_hist, tau_iso_WP, era, "Up");												
+		tau_scale_down = getrightbincontent(tau_scale_hist, tau_iso_WP, era, "Down");													
 		delete tau_scale_hist;
-		delete tau_scale_file;    
+		delete tau_scale_file;  
+		
+		TFile* tau_energy_scale_file = new TFile(((std::string) cfg["tau_energy_scale_file"]).c_str(), "READ");
+		TH2D* tau_energy_scale_hist = (TH2D*) tau_energy_scale_file->Get("tau_energy_scale");
+		
+		tau_energy_scale["h+-"][0] = getrightbincontent(tau_energy_scale_hist, 1, era, "Up");
+		tau_energy_scale["h+-"][1] = getrightbincontent(tau_energy_scale_hist, 1, era, "");
+		tau_energy_scale["h+-"][2] = getrightbincontent(tau_energy_scale_hist, 1, era, "Down");
+		
+		tau_energy_scale["h+- pi0s"][0] = getrightbincontent(tau_energy_scale_hist, 2, era, "Up");
+		tau_energy_scale["h+- pi0s"][1] = getrightbincontent(tau_energy_scale_hist, 2, era, "");
+		tau_energy_scale["h+- pi0s"][2] = getrightbincontent(tau_energy_scale_hist, 2, era, "Down");
+		
+		tau_energy_scale["h+-h+-h+-"][0] = getrightbincontent(tau_energy_scale_hist, 3, era, "Up");
+		tau_energy_scale["h+-h+-h+-"][1] = getrightbincontent(tau_energy_scale_hist, 3, era, "");
+		tau_energy_scale["h+-h+-h+-"][2] = getrightbincontent(tau_energy_scale_hist, 3, era, "Down");
+		
+		tau_energy_scale["h+-h+-h+- pi0s"][0] = getrightbincontent(tau_energy_scale_hist, 4, era, "Up");
+		tau_energy_scale["h+-h+-h+- pi0s"][1] = getrightbincontent(tau_energy_scale_hist, 4, era, "");
+		tau_energy_scale["h+-h+-h+- pi0s"][2] = getrightbincontent(tau_energy_scale_hist, 4, era, "Down");
+		
+		delete tau_energy_scale_hist; 
+		delete tau_energy_scale_file;
 	}
 }
