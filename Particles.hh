@@ -29,11 +29,28 @@ rvec<bool> ele_acceptance_and_id(	const rvec<float>& pt,
 									const rvec<float>& eta,
 									const rvec<Int_t>& id);
 									
-RNode apply_tau_energy_scale(	RNode df,
-								const rvec<float>& tau_decayMode,
-								const rvec<float>& tau_pt,
-								const rvec<float>& tau_eta,
-								const rvec<float>& tau_phi,
-								const rvec<float>& tau_mass);
+rvec<float> apply_tau_energy_scale_on_pt(	const rvec<int>& tau_decayMode,
+											const rvec<float>& tau_pt,
+											const rvec<float>& tau_eta,
+											const rvec<float>& tau_phi,
+											const rvec<float>& tau_mass);
+
+rvec<float> apply_tau_energy_scale_on_eta(	const rvec<int>& tau_decayMode,
+											const rvec<float>& tau_pt,
+											const rvec<float>& tau_eta,
+											const rvec<float>& tau_phi,
+											const rvec<float>& tau_mass);
+
+rvec<float> apply_tau_energy_scale_on_phi(	const rvec<int>& tau_decayMode,
+											const rvec<float>& tau_pt,
+											const rvec<float>& tau_eta,
+											const rvec<float>& tau_phi,
+											const rvec<float>& tau_mass);
+
+rvec<float> apply_tau_energy_scale_on_mass(	const rvec<int>& tau_decayMode,
+											const rvec<float>& tau_pt,
+											const rvec<float>& tau_eta,
+											const rvec<float>& tau_phi,
+											const rvec<float>& tau_mass);
 
 #endif

@@ -60,6 +60,10 @@ namespace config {
 							{"h+-h+-h+-", 		{1.0, 1.0, 1.0} },
 							{"h+-h+-h+- pi0s", 	{1.0, 1.0, 1.0} }
 						};
+						
+	
+    //hopefully remove this one day
+    std::string retadarded_but_necessary_for_ES = "";
 }
 
 bool config::load_config_file(json cfg)

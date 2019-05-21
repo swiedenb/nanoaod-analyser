@@ -1,5 +1,5 @@
 #include "Particles.hh"
-
+#include <iostream>
 
 // check if tau is in acceptance and fulfils id requirements
 rvec<bool> tau_acceptance_and_id(	const rvec<float>& pt, 
@@ -10,9 +10,11 @@ rvec<bool> tau_acceptance_and_id(	const rvec<float>& pt,
 	// tau pt cut
 	auto mask_pt = pt > config::tau_pt;
 	
+	std::cout << pt << "  " << mask_pt << std::endl;
+	
 	// tau eta cut
 	auto mask_eta = abs(eta) < config::tau_eta;
-	
+		
 	// tau iso requirement (1: VVLoose, 2: VLoose, 4: Loose, 8: Medium, 16: Tight, 32: VTight, 64: VVTight)
 	auto mask_iso = (iso & config::tau_iso_WP) == config::tau_iso_WP;
 	
@@ -66,27 +68,29 @@ rvec<bool> ele_acceptance_and_id(	const rvec<float>& pt,
 };
 
 
-// apply tau energy scale
-RNode apply_tau_energy_scale(	RNode df,
-								const rvec<float>& tau_decayMode,
-								const rvec<float>& tau_pt,
-								const rvec<float>& tau_eta,
-								const rvec<float>& tau_phi,
-								const rvec<float>& tau_mass) {	
-	rvec<float> new_tau_pt;				
-	rvec<float> new_tau_eta;				
-	rvec<float> new_tau_phi;				
-	rvec<float> new_tau_mass;				
+// calc tau energy scale
+ROOT::VecOps::RVec< ROOT::VecOps::RVec< float > > calc_tau_energy_scale(	const rvec<int>& tau_decayMode,
+																			const rvec<float>& tau_pt,
+																			const rvec<float>& tau_eta,
+																			const rvec<float>& tau_phi,
+																			const rvec<float>& tau_mass) {	
+	rvec<rvec<float>> binder(4);
+	
+	rvec<float> new_tau_pt(tau_pt.size());				
+	rvec<float> new_tau_eta(tau_eta.size());				
+	rvec<float> new_tau_phi(tau_phi.size());				
+	rvec<float> new_tau_mass(tau_mass.size());				
 	
 	for (uint i = 0; i<tau_pt.size(); i++) {
-		if (tau_pt[i] > 400)
-			new_tau_pt.push_back(tau_pt[i]);
-			new_tau_eta.push_back(tau_eta[i]);
-			new_tau_phi.push_back(tau_phi[i]);
-			new_tau_mass.push_back(tau_mass[i]);
+		if (tau_pt[i] > 400) {
+			new_tau_pt[i] = tau_pt[i];
+			new_tau_eta[i] = tau_eta[i];
+			new_tau_phi[i] = tau_phi[i];
+			new_tau_mass[i] = tau_mass[i];
 			continue;
+		}
 		
-		TLorentzVector p1, p2; 
+		TLorentzVector p1; 
 		p1.SetPtEtaPhiM(tau_pt[i], tau_eta[i], tau_phi[i], tau_mass[i]);
 		
 		if (tau_decayMode[i] == 0) {										// this is one prong decay
@@ -119,17 +123,51 @@ RNode apply_tau_energy_scale(	RNode df,
 				p1 *= (config::tau_energy_scale["h+-h+-h+- pi0s"])[2];
 		}
 		
-		new_tau_pt.push_back(p1.Pt());
-		new_tau_eta.push_back(p1.Eta());
-		new_tau_phi.push_back(p1.Phi());
-		new_tau_mass.push_back(p1.M());
+		new_tau_pt[i] = p1.Pt();
+		new_tau_eta[i] = p1.Eta();
+		new_tau_phi[i] = p1.Phi();
+		new_tau_mass[i] = p1.M();
 	}
 	
-	df = df.Define("Tau_pt_ES", [new_tau_pt](){return new_tau_pt;})
-				.Define("Tau_eta_ES", [new_tau_eta](){return new_tau_eta;})
-				.Define("Tau_phi_ES", [new_tau_phi](){return new_tau_phi;})
-				.Define("Tau_mass_ES", [new_tau_mass](){return new_tau_mass;});
-									
+	binder[0] = new_tau_pt;				
+	binder[1] = new_tau_eta;				
+	binder[2] = new_tau_phi;				
+	binder[3] = new_tau_mass;
 	
-	return df;
+	return binder;
+}
+
+// apply tau energy scale
+rvec<float> apply_tau_energy_scale_on_pt(	const rvec<int>& tau_decayMode,
+											const rvec<float>& tau_pt,
+											const rvec<float>& tau_eta,
+											const rvec<float>& tau_phi,
+											const rvec<float>& tau_mass) {	
+	
+	
+	return calc_tau_energy_scale(tau_decayMode, tau_pt, tau_eta, tau_phi, tau_mass)[0];
+};
+
+rvec<float> apply_tau_energy_scale_on_eta(	const rvec<int>& tau_decayMode,
+											const rvec<float>& tau_pt,
+											const rvec<float>& tau_eta,
+											const rvec<float>& tau_phi,
+											const rvec<float>& tau_mass) {	
+	return calc_tau_energy_scale(tau_decayMode, tau_pt, tau_eta, tau_phi, tau_mass)[1];
+};
+
+rvec<float> apply_tau_energy_scale_on_phi(	const rvec<int>& tau_decayMode,
+											const rvec<float>& tau_pt,
+											const rvec<float>& tau_eta,
+											const rvec<float>& tau_phi,
+											const rvec<float>& tau_mass) {	
+	return calc_tau_energy_scale(tau_decayMode, tau_pt, tau_eta, tau_phi, tau_mass)[2];
+};
+
+rvec<float> apply_tau_energy_scale_on_mass(	const rvec<int>& tau_decayMode,
+											const rvec<float>& tau_pt,
+											const rvec<float>& tau_eta,
+											const rvec<float>& tau_phi,
+											const rvec<float>& tau_mass) {	
+	return calc_tau_energy_scale(tau_decayMode, tau_pt, tau_eta, tau_phi, tau_mass)[3];
 };
