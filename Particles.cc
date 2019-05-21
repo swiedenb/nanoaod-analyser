@@ -1,5 +1,4 @@
 #include "Particles.hh"
-#include <iostream>
 
 // check if tau is in acceptance and fulfils id requirements
 rvec<bool> tau_acceptance_and_id(	const rvec<float>& pt, 
@@ -9,8 +8,6 @@ rvec<bool> tau_acceptance_and_id(	const rvec<float>& pt,
 									const rvec<UChar_t>& antiMu_disc) {
 	// tau pt cut
 	auto mask_pt = pt > config::tau_pt;
-	
-	std::cout << pt << "  " << mask_pt << std::endl;
 	
 	// tau eta cut
 	auto mask_eta = abs(eta) < config::tau_eta;
