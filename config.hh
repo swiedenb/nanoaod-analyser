@@ -36,8 +36,6 @@ namespace config {
     
     extern std::map< std::string, std::vector< double > > tau_energy_scale;
     
-    //hopefully remove this one day
-    extern std::string retadarded_but_necessary_for_ES;
 }
 
 #endif

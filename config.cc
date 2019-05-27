@@ -60,10 +60,7 @@ namespace config {
 							{"h+-h+-h+-", 		{1.0, 1.0, 1.0} },
 							{"h+-h+-h+- pi0s", 	{1.0, 1.0, 1.0} }
 						};
-						
 	
-    //hopefully remove this one day
-    std::string retadarded_but_necessary_for_ES = "";
 }
 
 bool config::load_config_file(json cfg)
@@ -121,18 +118,7 @@ bool config::load_config_file(json cfg)
 		
 		// read in tau scale factor file
 		TFile* tau_scale_file = new TFile(((std::string) cfg["tau_scale_factor_file"]).c_str(), "READ");
-		TH2D* tau_scale_hist = (TH2D*) tau_scale_file->Get("tau_scale_factor");
-		//~ tau_scale = tau_scale_hist->GetBinContent( tau_scale_hist->GetXaxis()->FindBin( tau_iso_WP ),
-												  //~ tau_scale_hist->GetYaxis()->FindBin( era ) );
-		//~ tau_scale_up = tau_scale_hist->GetBinContent( tau_scale_hist->GetXaxis()->FindBin( tau_iso_WP ), 
-													 //~ tau_scale_hist->GetYaxis()->FindBin( era ) ) 
-							//~ + tau_scale_hist->GetBinErrorUp( tau_scale_hist->GetXaxis()->FindBin( tau_iso_WP ),
-															//~ tau_scale_hist->GetYaxis()->FindBin( era ) );
-		//~ tau_scale_down = tau_scale_hist->GetBinContent( tau_scale_hist->GetXaxis()->FindBin( tau_iso_WP ), 
-													 //~ tau_scale_hist->GetYaxis()->FindBin( era ) ) 
-							//~ - tau_scale_hist->GetBinErrorLow( tau_scale_hist->GetXaxis()->FindBin( tau_iso_WP ),
-															//~ tau_scale_hist->GetYaxis()->FindBin( era ) );
-		
+		TH2D* tau_scale_hist = (TH2D*) tau_scale_file->Get("tau_scale_factor");		
 		
 		tau_scale = getrightbincontent(tau_scale_hist, tau_iso_WP, era, "");											
 		tau_scale_up = getrightbincontent(tau_scale_hist, tau_iso_WP, era, "Up");												
