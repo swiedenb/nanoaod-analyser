@@ -13,5 +13,10 @@ using rvec = ROOT::VecOps::RVec<T>;
 float pu_weight( const float nvtx_true);
 float apply_scale_factor(); 
 float calc_top_pt_reweighting( const rvec<int>& gen_pdg,
-                               const rvec<float>& gen_pt); 
+                               const rvec<float>& gen_pt);
+float get_pdf_weight(const unsigned int n_pdf_weight,
+                     const rvec<float>& pdf_weight);
+                     
+                     
+                     
 #endif

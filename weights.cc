@@ -28,3 +28,10 @@ float calc_top_pt_reweighting( const rvec<int>& gen_pdg,
         return std::sqrt(func(gen_pt[2]) * func(gen_pt[3]));
    return 1.0;
 };
+
+// function for pdf weights
+float get_pdf_weight(const unsigned int n_pdf_weight,
+                     const rvec<float>& pdf_weight) {
+    return pdf_weight[n_pdf_weight];
+};
+

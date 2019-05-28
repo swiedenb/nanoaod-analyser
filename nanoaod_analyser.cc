@@ -174,7 +174,22 @@ void analyse(	RNode df,
 	
 	fill_hists(df_dphi, outFile);
 	
-	
+	if (!config::runOnData) {
+		for (uint pdf_weight_i = 0; pdf_weight_i < (*df_dphi.Sum( "nLHEPdfWeight" ) / *df_dphi.Count()); pdf_weight_i++) {
+			std::string pdf_column_title = "pdf_weight" + std::to_string(pdf_weight_i);
+			
+			auto pdf_weights = df_dphi.Define(pdf_column_title, [pdf_weight_i](rvec<float> pdf_weights){ return get_pdf_weight(pdf_weight_i, pdf_weights); }, {"LHEPdfWeight"});
+			
+			std::string final_weights_title = "final_weights" + std::to_string(pdf_weight_i);
+			
+			auto final_weights = pdf_weights.Define(final_weights_title, ( (std::string) "total_weight*" + pdf_column_title ) );
+
+			auto pdf_hist = final_weights.Histo1D<double>( { ( (std::string) ("MT_pdf_" + std::to_string(pdf_weight_i)) ).c_str() , "MT", 5000u, 0 , 5000}, "MT", final_weights_title);
+
+			pdf_hist->Write();
+		}
+	}
+		
 	
 	// Print information about cut efficiencies
 	df_dphi.Report()->Print();
@@ -294,14 +309,6 @@ int main (int argc, char* argv[]) {
 												.Define("Tau_phi_ES", apply_tau_energy_scale_on_phi, {"Tau_decayMode", "Tau_pt", "Tau_eta", "Tau_phi", "Tau_mass"})
 												.Define("Tau_mass_ES", apply_tau_energy_scale_on_mass, {"Tau_decayMode", "Tau_pt", "Tau_eta", "Tau_phi", "Tau_mass"});
 			
-			// convert pdf array to weight columns
-			auto convert = [pdf_weight_i](rvec<float> pdfweights){
-				return pdfweights[pdf_weight_i];
-			};
-			RNode dummy = tau_es_applies;
-			for (int pdf_weight_i : *tau_es_applies.Sum( "nLHEPdfWeight" ) / *tau_es_applies.Count() ) {
-				dummy = dummy.Define("n_PDF_weight_" + std::to_string(pdf_weight_i), convert, {"LHEPdfWeight"});
-			}		
 			
 			// this function does all analysis steps
 			analyse(tau_es_applies, outFile);
