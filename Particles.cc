@@ -2,7 +2,8 @@
 
 // check if tau is in acceptance and fulfils id requirements
 rvec<bool> tau_acceptance_and_id(	const rvec<float>& pt, 
-									const rvec<float>& eta, 
+									const rvec<float>& eta,
+									const rvec<bool>& dm,
 									const rvec<UChar_t>& iso, 
 									const rvec<UChar_t>& antiEle_disc, 
 									const rvec<UChar_t>& antiMu_disc) {
@@ -11,6 +12,9 @@ rvec<bool> tau_acceptance_and_id(	const rvec<float>& pt,
 	
 	// tau eta cut
 	auto mask_eta = abs(eta) < config::tau_eta;
+	
+	// tau decay mode
+	auto mask_dm = dm;
 		
 	// tau iso requirement (1: VVLoose, 2: VLoose, 4: Loose, 8: Medium, 16: Tight, 32: VTight, 64: VVTight)
 	auto mask_iso = (iso & config::tau_iso_WP) == config::tau_iso_WP;
@@ -22,7 +26,7 @@ rvec<bool> tau_acceptance_and_id(	const rvec<float>& pt,
 	auto mask_antimu = (config::tau_antiMu_WP & antiMu_disc) == config::tau_antiMu_WP;
 	
 	// return vector with true, if particle fulfils all requirements - else false
-	return mask_pt & mask_eta & mask_iso & mask_antiele & mask_antimu;
+	return mask_pt & mask_eta & mask_dm & mask_iso & mask_antiele & mask_antimu;
 };
 
 // check if muon is in acceptance and fulfils id requirements

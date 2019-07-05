@@ -14,6 +14,7 @@ using RNode = ROOT::RDF::RNode;
 
 rvec<bool> tau_acceptance_and_id(	const rvec<float>& pt, 
 									const rvec<float>& eta, 
+									const rvec<bool> & dm,
 									const rvec<UChar_t>& iso, 
 									const rvec<UChar_t>& antiEle_disc, 
 									const rvec<UChar_t>& antiMu_disc);

@@ -35,3 +35,16 @@ float get_pdf_weight(const unsigned int n_pdf_weight,
     return pdf_weight[n_pdf_weight];
 };
 
+// apply kfactor for W background
+float get_kfactor(	const rvec<int>& gen_pdg,
+					const rvec<float>& gen_mass) {
+	auto mass = 0.0;
+	for (int i = 0; i < gen_pdg.size(); i++) {
+		if (abs(gen_pdg[i]) == 24) {
+			mass = gen_mass[i];
+			break;
+		}
+	}
+	
+	return config::W_kfactor_hist->GetBinContent(config::W_kfactor_hist->GetXaxis()->FindBin(mass));
+}
