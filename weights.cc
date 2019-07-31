@@ -30,25 +30,25 @@ float tau_fake_scale_factor(	const float& tau_eta,
 		return sqrt( pow(deltaPhi, 2) + pow(deltaEta, 2) );
 	};
 	
-	match = false;
+	bool match = false;
 	uint i = 0;
 	while (!match) {
-		if ( std::abs(gen_pdgID) != required_pdgID )
+		if ( std::abs(gen_pdgID[i]) != required_pdgID )
 			continue;
-		if deltaR( delta_phi(tau_phi, gen_phi[i]), delta_eta(tau_eta, gen_eta[i]) < 0.3) {
+		if ( deltaR( delta_phi(tau_phi, gen_phi[i]), delta_eta(tau_eta, gen_eta[i]) < 0.3 ) ) {
 			match = true;
 		}
 		i++;
 	}
 	
-	scale_factor = 1.0;
+	float scale_factor = 1.0;
 	
 	if (match) {
 		if (required_pdgID == 11) {
-			scale_factor = config::tau_ele_fake_hist->GetBinContent( tau_ele_fake_hist->GetXaxis()->FindBin( std::abs(tau_eta) ) );
+			scale_factor = config::tau_ele_fake_hist->GetBinContent( config::tau_ele_fake_hist->GetXaxis()->FindBin( std::abs(tau_eta) ) );
 		} 
 		else if (required_pdgID == 13)  {
-			scale_factor = config::tau_muo_fake_hist->GetBinContent( tau_muo_fake_hist->GetXaxis()->FindBin( std::abs(tau_eta) ) );
+			scale_factor = config::tau_muo_fake_hist->GetBinContent( config::tau_muo_fake_hist->GetXaxis()->FindBin( std::abs(tau_eta) ) );
 		}
 	}
 	
@@ -82,5 +82,5 @@ float get_kfactor(	const rvec<int>& gen_pdg,
 		}
 	}
 	
-	return config::W_kfactor_hist->GetBinContent(config::W_kfactor_hist->GetXaxis()->tauFindBin(mass));
+	return config::W_kfactor_hist->GetBinContent(config::W_kfactor_hist->GetXaxis()->FindBin(mass));
 }

@@ -70,7 +70,7 @@ float delta_phi(	const float& part1_phi,
 // Returns Delta Eta between two particles
 float delta_eta(	const float& part1_eta,
 					const float& part2_eta) {
-	return abs(part1_eta - part_eta);
+	return abs(part1_eta - part2_eta);
 };
 
 // Returns abs of given number

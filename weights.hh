@@ -2,6 +2,7 @@
 #define WEIGHTS_H
 
 #include "config.hh"
+#include "PhysicalQuantities.hh"
 
 #include <TROOT.h>
 #include <ROOT/RDataFrame.hxx>

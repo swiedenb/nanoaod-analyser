@@ -53,7 +53,11 @@ float ratio(const float& part1_pt,
 // Returns Delta Phi between two particles
 float delta_phi(const float& part1_phi,
 				const float& part2_phi);
-				
+
+// Returns Delta Eta between two particles				
+float delta_eta(	const float& part1_eta,
+					const float& part2_eta);
+
 // Returns abs of given number
 float calc_abs(const float& numb);
 

@@ -180,7 +180,7 @@ bool config::load_config_file(json cfg)
 		
 		if (cfg.find("tau_muon_fake_scale_file") != cfg.end() ) {
 			TFile* tau_muon_fake_scale_file = new TFile(((std::string) cfg["tau_muon_fake_scale_file"]).c_str(), "READ");
-			tau_muo_fake_hist = (TH1D*) tau_ele_fake_scale_file->Get("tau_muon_fake_rate");
+			tau_muo_fake_hist = (TH1D*) tau_muon_fake_scale_file->Get("tau_muon_fake_rate");
 		}
 	}
 }
