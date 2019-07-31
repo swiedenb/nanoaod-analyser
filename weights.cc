@@ -31,24 +31,23 @@ float tau_fake_scale_factor(	const float& tau_eta,
 	};
 	
 	bool match = false;
-	uint i = 0;
-	while (!match) {
+	for (uint i = 0; i < gen_pdgID.size(); i++) {
+		if (match) break;
 		if ( std::abs(gen_pdgID[i]) != required_pdgID )
 			continue;
 		if ( deltaR( delta_phi(tau_phi, gen_phi[i]), delta_eta(tau_eta, gen_eta[i]) < 0.3 ) ) {
 			match = true;
 		}
-		i++;
 	}
 	
 	float scale_factor = 1.0;
 	
 	if (match) {
 		if (required_pdgID == 11) {
-			scale_factor = config::tau_ele_fake_hist->GetBinContent( config::tau_ele_fake_hist->GetXaxis()->FindBin( std::abs(tau_eta) ) );
+			scale_factor *= config::tau_ele_fake_hist->GetBinContent( config::tau_ele_fake_hist->GetXaxis()->FindBin( std::abs(tau_eta) ), config::tau_ele_fake_hist->GetYaxis()->FindBin( config::tau_antiE_WP ) );
 		} 
 		else if (required_pdgID == 13)  {
-			scale_factor = config::tau_muo_fake_hist->GetBinContent( config::tau_muo_fake_hist->GetXaxis()->FindBin( std::abs(tau_eta) ) );
+			scale_factor *= config::tau_muo_fake_hist->GetBinContent( config::tau_muo_fake_hist->GetXaxis()->FindBin( std::abs(tau_eta) ), config::tau_ele_fake_hist->GetYaxis()->FindBin( config::tau_antiMu_WP ) );
 		}
 	}
 	
