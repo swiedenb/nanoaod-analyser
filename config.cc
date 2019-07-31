@@ -8,6 +8,9 @@
 namespace config {
 	// set default values for all used quantities
 	
+	// trigger string
+	std::string trigger = "HLT_MediumChargedIsoPFTau180HighPtRelaxedIso_Trk50_eta2p1_1pr || HLT_MediumChargedIsoPFTau180HighPtRelaxedIso_Trk50_eta2p1";
+	
 	// minimum tau pt
     float tau_pt = 80;
     
@@ -21,6 +24,8 @@ namespace config {
     float muon_eta = 2.4;
     
     // working points of tau identification
+    std::string tau_dm = "Tau_idDecayModeNewDMs";
+    std::string tau_iso = "Tau_idMVAnewDM2017v2";
     uint tau_iso_WP = 1;
     uint tau_antiMu_WP = 1;
     uint tau_antiE_WP = 1;
@@ -36,6 +41,15 @@ namespace config {
     
     // pileup hist
     TH1D* pileup_hist = NULL;
+    
+    // W kfactor hist
+    TH1D* W_kfactor_hist = NULL;
+    
+    // tau electron fake scale factor hist
+    TH1D* tau_ele_fake_hist = NULL;
+    
+    // tau muon fake scale factor hist
+    TH1D* tau_muo_fake_hist = NULL;
     
     // runOnData?
     bool runOnData = false;
@@ -72,11 +86,17 @@ bool config::load_config_file(json cfg)
     cfg_json >> globalcfg;
     
     // always check, if the key is actually in the config file
-    if (globalcfg.find("tau_pt") != globalcfg.end()) 	tau_pt = globalcfg["tau_pt"];
-    if (globalcfg.find("tau_eta") != globalcfg.end()) 	tau_eta = globalcfg["tau_eta"];
-    if (globalcfg.find("muon_pt") != globalcfg.end()) 	muon_pt = globalcfg["muon_pt"];
-    if (globalcfg.find("muon_eta") != globalcfg.end()) 	muon_eta = globalcfg["muon_eta"];
-    if (globalcfg.find("met_pt") != globalcfg.end()) 	met_pt = globalcfg["met_pt"];
+    if (globalcfg.find("tau_pt") != globalcfg.end()) 			tau_pt = globalcfg["tau_pt"];
+    if (globalcfg.find("tau_eta") != globalcfg.end()) 			tau_eta = globalcfg["tau_eta"];
+    if (globalcfg.find("muon_pt") != globalcfg.end()) 			muon_pt = globalcfg["muon_pt"];
+    if (globalcfg.find("muon_eta") != globalcfg.end()) 			muon_eta = globalcfg["muon_eta"];
+    if (globalcfg.find("met_pt") != globalcfg.end()) 			met_pt = globalcfg["met_pt"];
+    if (globalcfg.find("tau_decayMode") != globalcfg.end()) 	tau_dm = globalcfg["tau_decayMode"];
+    if (tau_dm == "Tau_idDecayModeNewDMs") {
+		tau_iso = "Tau_idMVAnewDM2017v2";
+	} else {
+		tau_iso = "Tau_idMVAoldDM2017v2";
+	}
     
     if (globalcfg.find("tau_isolation_WP") != globalcfg.end())
 		tau_iso_WP = globalcfg["tau_isolation_WP"];
@@ -90,7 +110,7 @@ bool config::load_config_file(json cfg)
     if (cfg.find("gen_cut_min") != cfg.end())		cut_value_min = cfg["gen_cut_min"];
     if (cfg.find("gen_cut_max") != cfg.end())		cut_value_max = cfg["gen_cut_max"];
     
-    
+    if (cfg.find("trigger") != cfg.end())			trigger = cfg["trigger"];
     if (cfg.find("runOnData") != cfg.end())			runOnData = cfg["runOnData"];
     if (cfg.find("era") != cfg.end())				era = cfg["era"];
     
@@ -147,5 +167,20 @@ bool config::load_config_file(json cfg)
 		
 		delete tau_energy_scale_hist; 
 		delete tau_energy_scale_file;
+		
+		if (cfg.find("W_kfactor_file") != cfg.end() ) {
+			TFile* W_kfactor_file = new TFile(((std::string) cfg["W_kfactor_file"]).c_str(), "READ");
+			W_kfactor_hist = (TH1D*) W_kfactor_file->Get("h_t_kfac_add");
+		}
+		
+		if (cfg.find("tau_ele_fake_scale_file") != cfg.end() ) {
+			TFile* tau_ele_fake_scale_file = new TFile(((std::string) cfg["tau_ele_fake_scale_file"]).c_str(), "READ");
+			tau_ele_fake_hist = (TH1D*) tau_ele_fake_scale_file->Get("tau_ele_fake_rate");
+		}
+		
+		if (cfg.find("tau_muon_fake_scale_file") != cfg.end() ) {
+			TFile* tau_muon_fake_scale_file = new TFile(((std::string) cfg["tau_muon_fake_scale_file"]).c_str(), "READ");
+			tau_muo_fake_hist = (TH1D*) tau_ele_fake_scale_file->Get("tau_muon_fake_rate");
+		}
 	}
 }

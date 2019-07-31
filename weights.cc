@@ -9,14 +9,50 @@ float pu_weight( const float nvtx_true){
 
 // get tau scale factor
 float apply_scale_factor() {
-    if (config::run_type == "") {
-        return config::tau_scale;
-    } else if (config::run_type == "_TauScaleUp") {
+    if (config::run_type == "_TauScaleUp") {
         return config::tau_scale_up;
     } else if (config::run_type == "_TauScaleDown") {
         return config::tau_scale_down;
-    }
-    return 1.0;
+    } else {
+        return config::tau_scale;
+	}
+};
+
+// get tau fake rate scale factor (for both e an mu)
+float tau_fake_scale_factor(	const float& tau_eta,
+								const float& tau_phi,
+								const rvec<int>& gen_pdgID,
+								const rvec<float>& gen_eta,
+								const rvec<float>& gen_phi,
+								const int& required_pdgID) {
+	
+	auto deltaR = [](const float& deltaPhi, const float& deltaEta){
+		return sqrt( pow(deltaPhi, 2) + pow(deltaEta, 2) );
+	};
+	
+	match = false;
+	uint i = 0;
+	while (!match) {
+		if ( std::abs(gen_pdgID) != required_pdgID )
+			continue;
+		if deltaR( delta_phi(tau_phi, gen_phi[i]), delta_eta(tau_eta, gen_eta[i]) < 0.3) {
+			match = true;
+		}
+		i++;
+	}
+	
+	scale_factor = 1.0;
+	
+	if (match) {
+		if (required_pdgID == 11) {
+			scale_factor = config::tau_ele_fake_hist->GetBinContent( tau_ele_fake_hist->GetXaxis()->FindBin( std::abs(tau_eta) ) );
+		} 
+		else if (required_pdgID == 13)  {
+			scale_factor = config::tau_muo_fake_hist->GetBinContent( tau_muo_fake_hist->GetXaxis()->FindBin( std::abs(tau_eta) ) );
+		}
+	}
+	
+	return scale_factor;
 };
 
 
@@ -46,5 +82,5 @@ float get_kfactor(	const rvec<int>& gen_pdg,
 		}
 	}
 	
-	return config::W_kfactor_hist->GetBinContent(config::W_kfactor_hist->GetXaxis()->FindBin(mass));
+	return config::W_kfactor_hist->GetBinContent(config::W_kfactor_hist->GetXaxis()->tauFindBin(mass));
 }

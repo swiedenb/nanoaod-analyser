@@ -7,14 +7,19 @@
 using json = nlohmann::json;
 
 namespace config {
+	extern std::string trigger;
+	
 	extern float tau_pt;
 	extern float tau_eta;
-	extern float muon_pt;
-	extern float muon_eta;
-	extern float met_pt;
+	extern std::string tau_dm;
+	extern std::string tau_iso;
     extern uint tau_iso_WP;
     extern uint tau_antiE_WP;
     extern uint tau_antiMu_WP;
+    
+	extern float muon_pt;
+	extern float muon_eta;
+	extern float met_pt;
     
     extern int gen_pdgID;
     extern std::string cut_type;
@@ -36,6 +41,10 @@ namespace config {
     
     extern std::map< std::string, std::vector< double > > tau_energy_scale;
     
+    extern TH1D* W_kfactor_hist;
+    
+    extern TH1D* tau_ele_fake_hist;
+    extern TH1D* tau_muo_fake_hist;
 }
 
 #endif
