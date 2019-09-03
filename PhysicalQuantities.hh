@@ -49,6 +49,10 @@ float mass_inv_masked(	const rvec<float>& p1_pt,
 float ratio(const float& part1_pt, 
 			const float& part2_pt);
 
+// Returns ratio of two given quants
+rvec<float> ratio_vector(	const rvec<float> & part1_qt, 
+							const float& part2_qt);
+
 
 // Returns Delta Phi between two particles
 float delta_phi(const float& part1_phi,

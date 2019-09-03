@@ -1,33 +1,6 @@
 #include "Particles.hh"
 
-// check if tau is in acceptance and fulfils id requirements BUT NOT ISO
-rvec<bool> tau_acceptance_and_id_noIso(	const rvec<float>& pt, 
-										const rvec<float>& eta,
-										const rvec<bool>& dm,
-										const rvec<UChar_t>& iso, 
-										const rvec<UChar_t>& antiEle_disc, 
-										const rvec<UChar_t>& antiMu_disc) {
-	// tau pt cut
-	auto mask_pt = pt > config::tau_pt;
-	
-	// tau eta cut
-	auto mask_eta = abs(eta) < config::tau_eta;
-	
-	// tau decay mode
-	auto mask_dm = dm;
-		
-	// tau iso requirement (1: VVLoose, 2: VLoose, 4: Loose, 8: Medium, 16: Tight, 32: VTight, 64: VVTight)
-	auto mask_iso = !((iso & config::tau_iso_WP) == config::tau_iso_WP);
-	
-	// Anti Electron discriminator (1: VLoose, 2: Loose, 4: Medium, 8: Tight, 16: VTight)
-	auto mask_antiele = (config::tau_antiE_WP & antiEle_disc) == config::tau_antiE_WP;
-	
-	// Anti Muon discriminator (1: Loose, 2: Tight)
-	auto mask_antimu = (config::tau_antiMu_WP & antiMu_disc) == config::tau_antiMu_WP;
-	
-	// return vector with true, if particle fulfils all requirements - else false
-	return mask_pt & mask_eta & mask_dm & mask_iso & mask_antiele & mask_antimu;
-};
+
 
 // check if tau is in acceptance and fulfils id requirements
 rvec<bool> tau_acceptance_and_id(	const rvec<float>& pt, 

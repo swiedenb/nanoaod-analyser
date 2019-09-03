@@ -19,12 +19,12 @@ using RNode = ROOT::RDF::RNode;
 json goldenjson;
 json cfg;
 
-// Particle number cut: how many 'trues' in mask
+// Particle number cut: how many "trues" in mask
 bool nparticle_cut(const rvec<bool>& mask) {
 	return std::count(mask.begin(), mask.end(), true) == 1;
 };
 
-// Particle number veto: how many 'trues' in mask
+// Particle number veto: how many "trues" in mask
 bool nparticle_veto(const rvec<bool>& mask) {
 	return std::count(mask.begin(), mask.end(), true) == 0;
 };
@@ -33,6 +33,12 @@ bool nparticle_veto(const rvec<bool>& mask) {
 float selected_part_quant(const rvec<float>& quantity, 
 								const rvec<bool>& mask) {
 	return quantity[mask][0];
+};
+
+// Returns first mask_true particle for quantity
+rvec <float> select_part_quants(const rvec<float>& quantity, 
+								const rvec<bool>& mask) {
+	return quantity[mask];
 };
 
 // fill trigger plots
@@ -59,9 +65,25 @@ RNode trigger(	RNode df,
 // fill preselection histograms
 void fill_preselection(	RNode df,
 						TFile* outFile) {
-	auto tau_pt = df.Histo1D(	{"Tau_pt", "", 			6000u, 0, 6000}, 					"Tau_pt");
-	auto tau_eta = df.Histo1D(	{"Tau_eta", "", 		100u, -5, 5}, 						"Tau_eta");
-	auto tau_phi = df.Histo1D(	{"Tau_phi", "", 		100u, -3.2, 3.2}, 					"Tau_phi");	
+	auto tau_pt = df.Histo1D(	{"Tau_pt", "", 			6000u, 0, 6000}, 					"Tau_pt_ES");
+	auto tau_eta = df.Histo1D(	{"Tau_eta", "", 		100u, -5, 5}, 						"Tau_eta_ES");
+	auto tau_phi = df.Histo1D(	{"Tau_phi", "", 		100u, -3.2, 3.2}, 					"Tau_phi_ES");	
+	auto met_pt = df.Histo1D(	{"MET_pt", "MET_pt", 	6000u, 0, 6000}, 					"MET_pt");
+	auto met_phi = df.Histo1D(	{"MET_phi", "MET_phi", 	100u, -3.2, 3.2}, 					"MET_phi");
+	tau_pt->Write();
+	tau_eta->Write();
+	tau_phi->Write();
+	met_pt->Write();
+	met_phi->Write();
+};
+
+
+// fill datadriven histograms
+void fill_datadriven(	RNode df,
+						TFile* outFile) {
+	auto tau_pt = df.Histo1D(	{"Tau_pt", "", 			6000u, 0, 6000}, 					"Tau_pt_new");
+	auto tau_eta = df.Histo1D(	{"Tau_eta", "", 		100u, -5, 5}, 						"Tau_eta_new");
+	auto tau_phi = df.Histo1D(	{"Tau_phi", "", 		100u, -3.2, 3.2}, 					"Tau_phi_new");	
 	auto met_pt = df.Histo1D(	{"MET_pt", "MET_pt", 	6000u, 0, 6000}, 					"MET_pt");
 	auto met_phi = df.Histo1D(	{"MET_phi", "MET_phi", 	100u, -3.2, 3.2}, 					"MET_phi");
 	tau_pt->Write();
@@ -81,9 +103,9 @@ void fill_hists(RNode df,
 		dummy = df.Define("total_weight", "1.0");
 	} else {
 		if (config::W_kfactor_hist != NULL) {
-			dummy = df.Define("total_weight", "pileup_weight*TauScaleFactor*top_pt_weight*genWeight*W_kfactor*1.0");
+			dummy = df.Define("total_weight", "pileup_weight*TauScaleFactor*top_pt_weight*genWeight*W_kfactor*TauEleFakeScaleFactor*TauMuonFakeScaleFactor*1.0");
 		} else {
-			dummy = df.Define("total_weight", "pileup_weight*TauScaleFactor*top_pt_weight*genWeight*1.0");
+			dummy = df.Define("total_weight", "pileup_weight*TauScaleFactor*top_pt_weight*genWeight*TauEleFakeScaleFactor*TauMuonFakeScaleFactor*1.0");
 		}
 	}
 	auto tau_pt = dummy.Histo1D(	{((TString) "Tau_pt" + config::run_type), "", 					6000u, 0, 6000}, 		"sel_Tau_pt", 				"total_weight");
@@ -128,6 +150,111 @@ bool gen_match(	const rvec<int>& gen_pdgId,
 	return false;
 };
 
+
+// Calculate datadriven distributions
+void calc_datadriven(TFile* outFile, RNode df) {
+	// calc pt_ratio vector
+	auto pt_ratio = df.Define("pt_ratio", ratio_vector, {"Tau_pt_ES", "MET_pt"});
+	
+	auto no_light_lepton = pt_ratio.Filter(nparticle_veto, {"Muon_mask"}, "muon_veto")
+									.Filter(nparticle_veto, {"Electron_mask"}, "electron_veto");
+	
+	// begin evaluating the branch with non isolated taus for datadriven background estimation in QCD and ZToNuNu						 
+	auto noniso_tau = no_light_lepton.Define("NonIso_Tau", [](		const rvec<float>& pt, 
+															const rvec<float>& eta,
+															const rvec<bool>& dm,
+															const rvec<UChar_t>& iso, 
+															const rvec<UChar_t>& antiEle_disc, 
+															const rvec<UChar_t>& antiMu_disc) {
+												// check if tau is in acceptance and fulfils id requirements BUT NOT ISO
+												auto mask_pt = pt > config::tau_pt;
+	
+												// tau eta cut
+												auto mask_eta = abs(eta) < config::tau_eta;
+												
+												// tau decay mode
+												auto mask_dm = dm;
+													
+												// tau iso requirement (1: VVLoose, 2: VLoose, 4: Loose, 8: Medium, 16: Tight, 32: VTight, 64: VVTight)
+												auto mask_iso = !((iso & config::tau_iso_WP) == config::tau_iso_WP);
+												
+												// Anti Electron discriminator (1: VLoose, 2: Loose, 4: Medium, 8: Tight, 16: VTight)
+												auto mask_antiele = (config::tau_antiE_WP & antiEle_disc) == config::tau_antiE_WP;
+												
+												// Anti Muon discriminator (1: Loose, 2: Tight)
+												auto mask_antimu = (config::tau_antiMu_WP & antiMu_disc) == config::tau_antiMu_WP;
+												
+												// return vector with true, if particle fulfils all requirements - else false
+												rvec <bool> mask = mask_pt & mask_eta & mask_dm & mask_iso & mask_antiele & mask_antimu;
+												return mask;
+											}, 
+											{"Tau_pt_ES", "Tau_eta_ES", config::tau_dm, config::tau_iso, "Tau_idAntiEle", "Tau_idAntiMu"});
+											
+		
+	
+	auto iso_tau = no_light_lepton.Define("Iso_Tau", tau_acceptance_and_id, {"Tau_pt_ES", "Tau_eta_ES", config::tau_dm, config::tau_iso, "Tau_idAntiEle", "Tau_idAntiMu"});
+	
+	
+	auto noniso_select = noniso_tau.Filter([](const rvec<bool>& mask){return std::count(mask.begin(), mask.end(), true) >= 1;}, {"NonIso_Tau"}, "select at least one nonIso tau");
+	auto noniso_redefine = noniso_select.Define("Tau_pt_new", select_part_quants, {"Tau_pt_ES", "NonIso_Tau"})
+										.Define("Tau_eta_new", select_part_quants, {"Tau_eta_ES", "NonIso_Tau"})
+										.Define("Tau_phi_new", select_part_quants, {"Tau_phi_ES", "NonIso_Tau"});
+	
+	
+	
+	auto iso_select = iso_tau.Filter(nparticle_cut, {"Iso_Tau"}, "select exactly one tau");
+	auto iso_redefine = iso_select.Define("Tau_pt_new", select_part_quants, {"Tau_pt_ES", "Iso_Tau"})
+									.Define("Tau_eta_new", select_part_quants, {"Tau_eta_ES", "Iso_Tau"})
+									.Define("Tau_phi_new", select_part_quants, {"Tau_phi_ES", "Iso_Tau"});
+	
+	// select regions with pt/ptmiss > 1.5 and evaluate tight to loose ratio there
+	auto noniso_nonsignal_region = noniso_redefine.Filter([](const rvec<float>& pt_ratio){
+																	for (auto& it : pt_ratio) {
+																		if (it >= 1.5) return true;
+																	}
+																	return false;
+																}, {"pt_ratio"}, "Non-signal region - nonIsolated");
+																
+	auto noniso_signal_region = noniso_redefine.Filter([](const rvec<float>& pt_ratio){
+																	for (auto& it : pt_ratio) {
+																		if (it >= 1.5) return false;
+																	}
+																	return true;
+																}, {"pt_ratio"}, "Signal region - nonIsolated");
+																
+																
+	auto iso_nonsignal_region = iso_redefine.Filter([](const rvec<float>& pt_ratio){
+																	for (auto& it : pt_ratio) {
+																		if (it >= 1.5) return true;
+																	}
+																	return false;
+																}, {"pt_ratio"}, "Non-signal region - Isolated");
+																
+	auto iso_signal_region = iso_redefine.Filter([](const rvec<float>& pt_ratio){
+																	for (auto& it : pt_ratio) {
+																		if (it >= 1.5) return false;
+																	}
+																	return true;
+																}, {"pt_ratio"}, "Signal region - Isolated");
+	
+	outFile->cd();
+	outFile->mkdir("Datadriven");
+	outFile->mkdir("Datadriven/NonSignalNonIso");
+	outFile->mkdir("Datadriven/SignalNonIso");
+	outFile->mkdir("Datadriven/NonSignalIso");
+	outFile->mkdir("Datadriven/SignalIso");
+	
+	outFile->cd("Datadriven/NonSignalNonIso");
+	fill_datadriven(noniso_nonsignal_region, outFile);
+	outFile->cd("Datadriven/SignalNonIso");
+	fill_datadriven(noniso_signal_region, outFile);
+	outFile->cd("Datadriven/NonSignalIso");
+	fill_datadriven(iso_nonsignal_region, outFile);
+	outFile->cd("Datadriven/SignalIso");
+	fill_datadriven(iso_signal_region, outFile);
+	outFile->cd();
+};
+
 // analyse function - gets called for each systematic
 void analyse(	RNode df, 
 				TFile* outFile) {
@@ -142,30 +269,47 @@ void analyse(	RNode df,
 	// Select trigger requirements
 	auto triggered = trigger(df, outFile);
 								
-	auto met_filter = triggered.Filter("Flag_METFilters", "Remove events, which do not fulfil MET filters");
+	auto met_filter = triggered.Filter("Flag_METFilters", "MET filters");
 		
 	// Trigger turn on cut
-	auto trigger_obj1 = met_filter.Filter("MET_pt > " + std::to_string(config::met_pt), "Avoid trigger turn on with MET object");
+	auto trigger_obj1 = met_filter.Filter("MET_pt > " + std::to_string(config::met_pt), "Avoid trigger turn on with MET object, pT>" + std::to_string(config::met_pt));
 	
 	auto trigger_obj2 = trigger_obj1.Filter([](const rvec<float>& tau_pt){	if (tau_pt.size() == 0) return false;
 																			if (tau_pt[0] < config::tau_pt) return false;
 																			return true;
 																		}, {"Tau_pt"}, "Avoid trigger turn on with tau object");
+																		
+	auto trigger_obj3 = trigger_obj2.Filter([](const rvec<float>& jet_pt,
+											   const rvec<float>& jet_eta){	if (jet_pt.size() == 0) return false;
+																			for (uint i = 0; i < jet_pt.size(); i++) {
+																				if (abs(jet_eta[i]) > 2.3)
+																					continue;
+																				if (jet_pt[i] > 100)
+																					return true;
+																			}
+	                    													return true;
+	                    												}, {"Jet_pt", "Jet_eta"}, "Avoid trigger turn on with jet object, pT>100");
 	
-	// at least one tau candidate in the event
-	auto trigger_obj = trigger_obj2.Filter("nTau >= 1", "At least one tau candidate");
+	
+	
 	
 	// fill preselection
 	if (config::run_type == "") {
 		outFile->cd();
 		outFile->cd("Preselection");
-		fill_preselection(trigger_obj, outFile);
+		fill_preselection(trigger_obj3, outFile);
 	}
 	
 	// creates mask, which fills bool tags for taus which fulfil id and are in acceptance
-	auto masked = trigger_obj.Define("Tau_mask", tau_acceptance_and_id,	{"Tau_pt_ES", "Tau_eta_ES", config::tau_dm, config::tau_iso, "Tau_idAntiEle", "Tau_idAntiMu"})
-							 .Define("Muon_mask", muon_acceptance_and_id, {"Muon_pt", "Muon_eta", "Muon_softId", "Muon_pfRelIso03_all"})
-							 .Define("Electron_mask", ele_acceptance_and_id, {"Electron_pt", "Electron_eta", "Electron_cutBased"});
+	auto masked = trigger_obj3.Define("Tau_mask", tau_acceptance_and_id,	{"Tau_pt_ES", "Tau_eta_ES", config::tau_dm, config::tau_iso, "Tau_idAntiEle", "Tau_idAntiMu"})
+							  .Define("Muon_mask", muon_acceptance_and_id, {"Muon_pt", "Muon_eta", "Muon_softId", "Muon_pfRelIso03_all"})
+							  .Define("Electron_mask", ele_acceptance_and_id, {"Electron_pt", "Electron_eta", "Electron_cutBased"});
+	
+	
+	
+	// this is for datadriven part of analysis
+	calc_datadriven(outFile, masked);
+	
 	
 	// Select events with certain number of taus, which fulfil all acceptance & id
 	// also, cut any event with electrons or muons
@@ -188,7 +332,21 @@ void analyse(	RNode df,
 	RNode saviour = mtcalc;
 	// Define and calculate weights for monte carlo
 	if (!config::runOnData) {
-		auto defineScaleFactors = mtcalc.Define("TauScaleFactor", apply_scale_factor, {});
+		auto defineScaleFactors = mtcalc.Define("TauScaleFactor", apply_scale_factor, {})
+										.Define("TauEleFakeScaleFactor", [](const float& tau_eta,
+										                                    const float& tau_phi,
+										                                    const rvec<int>& gen_pdgID,
+										                                    const rvec<float>& gen_eta,
+										                                    const rvec<float>& gen_phi) {
+																				return tau_fake_scale_factor(tau_eta, tau_phi, gen_pdgID, gen_eta, gen_phi, 11);
+																			}, {"sel_Tau_eta", "sel_Tau_phi", "GenPart_pdgId", "GenPart_eta", "GenPart_phi"})
+										.Define("TauMuonFakeScaleFactor", [](const float& tau_eta,
+										                                    const float& tau_phi,
+										                                    const rvec<int>& gen_pdgID,
+										                                    const rvec<float>& gen_eta,
+										                                    const rvec<float>& gen_phi) {
+																				return tau_fake_scale_factor(tau_eta, tau_phi, gen_pdgID, gen_eta, gen_phi, 13);
+																			}, {"sel_Tau_eta", "sel_Tau_phi", "GenPart_pdgId", "GenPart_eta", "GenPart_phi"});
 		
 		if (config::W_kfactor_hist != NULL) {
 			saviour = defineScaleFactors.Define("W_kfactor", get_kfactor, {"GenPart_pdgId", "GenPart_mass"});
@@ -209,7 +367,7 @@ void analyse(	RNode df,
 	
 	
 	
-	// actual analysis cut  -- 0.7 < pt/ptmiss < 1.4 
+	// actual analysis cut  -- 0.7 < pt/ptmiss < 1.3 
 	auto df_ptmiss = saviour.Filter("(pt_o_ptmiss > 0.7) && (pt_o_ptmiss < 1.3)", "pt_miss_cut");
 	
 	// Define Stage 1: fulfils ptmiss cut

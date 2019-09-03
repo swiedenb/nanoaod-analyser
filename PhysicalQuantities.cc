@@ -58,12 +58,22 @@ float ratio(	const float& part1_qt,
 	return part1_qt / part2_qt;
 };
 
+// Returns ratio of all valeus in vector divided by quant
+rvec <float> ratio_vector(	const rvec<float> & part1_qt, 
+							const float& part2_qt) {
+	rvec<float> result_vec(part1_qt.size());
+	for (uint i = 0; i < part1_qt.size(); i++) {
+		result_vec[i] = part1_qt[i] / part2_qt;
+	}
+	return result_vec;
+};
+
 // Returns Delta Phi between two particles
 float delta_phi(	const float& part1_phi,
 					const float& part2_phi) {
 	double dphi = part1_phi - part2_phi;
-	if (dphi > M_PI) dphi -= M_PI;
-	else if (dphi < - M_PI) dphi += M_PI;
+	if (dphi > M_PI) dphi -= 2*M_PI;
+	else if (dphi < - M_PI) dphi += 2*M_PI;
 	return dphi;
 };
 
