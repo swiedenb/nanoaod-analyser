@@ -13,12 +13,16 @@ namespace config {
 	extern float tau_eta;
 	extern std::string tau_dm;
 	extern std::string tau_iso;
+	extern std::string tau_antiEle;
+	extern std::string tau_antiMuon;
     extern uint tau_iso_WP;
     extern uint tau_antiE_WP;
     extern uint tau_antiMu_WP;
     
 	extern float muon_pt;
 	extern float muon_eta;
+	extern float ele_pt;
+	extern float ele_eta;
 	extern float met_pt;
     
     extern int gen_pdgID;

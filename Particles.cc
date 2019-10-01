@@ -58,13 +58,30 @@ rvec<bool> ele_acceptance_and_id(	const rvec<float>& pt,
 									const rvec<float>& eta,
 									const rvec<Int_t>& id) {
 	// electron pt cut
-	auto mask_pt = pt > 20;
+	auto mask_pt = pt > config::ele_pt;
 	
 	// electron eta cut
-	auto mask_eta = abs(eta) < 2.5;
+	auto mask_eta = abs(eta) < config::ele_eta;
 	
 	// electron id cut
 	auto mask_id = id >= 2;
+	
+	// return vector with true, if particle fulfils all requirements - else false
+	return mask_pt & mask_eta & mask_id;
+};
+
+
+rvec<bool> ele_acceptance_and_simpleid(	const rvec<float>& pt,
+										const rvec<float>& eta,
+										const rvec<bool>& id) {
+	// electron pt cut
+	auto mask_pt = pt > config::ele_pt;
+	
+	// electron eta cut
+	auto mask_eta = abs(eta) < config::ele_eta;
+	
+	// electron id cut
+	auto mask_id = id;
 	
 	// return vector with true, if particle fulfils all requirements - else false
 	return mask_pt & mask_eta & mask_id;

@@ -30,6 +30,10 @@ rvec<bool> ele_acceptance_and_id(	const rvec<float>& pt,
 									const rvec<float>& eta,
 									const rvec<Int_t>& id);
 									
+rvec<bool> ele_acceptance_and_simpleid(	const rvec<float>& pt,
+										const rvec<float>& eta,
+										const rvec<bool>& id);
+									
 rvec<float> apply_tau_energy_scale_on_pt(	const rvec<int>& tau_decayMode,
 											const rvec<float>& tau_pt,
 											const rvec<float>& tau_eta,

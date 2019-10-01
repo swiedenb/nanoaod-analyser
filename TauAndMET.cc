@@ -116,6 +116,8 @@ void fill_hists(RNode df,
 	auto pt_ratio = dummy.Histo1D(	{((TString) "pT_ratio" + config::run_type), "", 				100u, 0, 10}, 			"pt_o_ptmiss", 				"total_weight");
 	auto dphi = dummy.Histo1D(		{((TString) "DeltaPhi" + config::run_type), "", 				100u, 0, 3.2}, 			"dphi", 					"total_weight");
 	auto MT = dummy.Histo1D(		{((TString) "MT" + config::run_type), "", 						6000u, 0, 6000},		"MT", 						"total_weight");
+	auto nvtx = dummy.Histo1D(		{((TString) "nvtx" + config::run_type), "", 					80u, 0, 80}, 			"PV_npvs", 					"total_weight");
+	auto nvtxgood = dummy.Histo1D(	{((TString) "nvtx_good" + config::run_type), "", 				80u, 0, 80}, 			"PV_npvsGood", 				"total_weight");
 	tau_pt->Write();
 	tau_eta->Write();
 	tau_phi->Write();
@@ -124,6 +126,8 @@ void fill_hists(RNode df,
 	pt_ratio->Write();
 	dphi->Write();
 	MT->Write();
+	nvtx->Write();
+	nvtxgood->Write();
 };
 
 bool gen_match(	const rvec<int>& gen_pdgId,
@@ -192,7 +196,7 @@ void calc_datadriven(TFile* outFile, RNode df) {
 											
 		
 	
-	auto iso_tau = no_light_lepton.Define("Iso_Tau", tau_acceptance_and_id, {"Tau_pt_ES", "Tau_eta_ES", config::tau_dm, config::tau_iso, "Tau_idAntiEle", "Tau_idAntiMu"});
+	auto iso_tau = no_light_lepton.Define("Iso_Tau", tau_acceptance_and_id, {"Tau_pt_ES", "Tau_eta_ES", config::tau_dm, config::tau_iso, config::tau_antiEle, config::tau_antiMuon});
 	
 	
 	auto noniso_select = noniso_tau.Filter([](const rvec<bool>& mask){return std::count(mask.begin(), mask.end(), true) >= 1;}, {"NonIso_Tau"}, "select at least one nonIso tau");
@@ -301,7 +305,7 @@ void analyse(	RNode df,
 	}
 	
 	// creates mask, which fills bool tags for taus which fulfil id and are in acceptance
-	auto masked = trigger_obj3.Define("Tau_mask", tau_acceptance_and_id,	{"Tau_pt_ES", "Tau_eta_ES", config::tau_dm, config::tau_iso, "Tau_idAntiEle", "Tau_idAntiMu"})
+	auto masked = trigger_obj3.Define("Tau_mask", tau_acceptance_and_id,	{"Tau_pt_ES", "Tau_eta_ES", config::tau_dm, config::tau_iso, config::tau_antiEle, config::tau_antiMuon})
 							  .Define("Muon_mask", muon_acceptance_and_id, {"Muon_pt", "Muon_eta", "Muon_softId", "Muon_pfRelIso03_all"})
 							  .Define("Electron_mask", ele_acceptance_and_id, {"Electron_pt", "Electron_eta", "Electron_cutBased"});
 	

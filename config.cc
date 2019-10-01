@@ -20,12 +20,20 @@ namespace config {
 	// minimum muon pt
     float muon_pt = 20;
     
-    // maximum tau eta
+    // maximum muon eta
     float muon_eta = 2.4;
+    
+	// minimum ele pt
+    float ele_pt = 20;
+    
+    // maximum ele eta
+    float ele_eta = 2.5;
     
     // working points of tau identification
     std::string tau_dm = "Tau_idDecayModeNewDMs";
     std::string tau_iso = "Tau_idMVAnewDM2017v2";
+	std::string tau_antiEle = "Tau_idAntiEle";
+	std::string tau_antiMuon = "Tau_idAntiMu";
     uint tau_iso_WP = 1;
     uint tau_antiMu_WP = 1;
     uint tau_antiE_WP = 1;
@@ -90,13 +98,14 @@ bool config::load_config_file(json cfg)
     if (globalcfg.find("tau_eta") != globalcfg.end()) 			tau_eta = globalcfg["tau_eta"];
     if (globalcfg.find("muon_pt") != globalcfg.end()) 			muon_pt = globalcfg["muon_pt"];
     if (globalcfg.find("muon_eta") != globalcfg.end()) 			muon_eta = globalcfg["muon_eta"];
+    if (globalcfg.find("electron_pt") != globalcfg.end()) 		ele_pt = globalcfg["electron_pt"];
+    if (globalcfg.find("electron_eta") != globalcfg.end()) 		ele_eta = globalcfg["electron_eta"];
     if (globalcfg.find("met_pt") != globalcfg.end()) 			met_pt = globalcfg["met_pt"];
+    
     if (globalcfg.find("tau_decayMode") != globalcfg.end()) 	tau_dm = globalcfg["tau_decayMode"];
-    if (tau_dm == "Tau_idDecayModeNewDMs") {
-		tau_iso = "Tau_idMVAnewDM2017v2";
-	} else {
-		tau_iso = "Tau_idMVAoldDM2017v2";
-	}
+    if (globalcfg.find("tau_isolation") != globalcfg.end()) 	tau_iso = globalcfg["tau_isolation"];
+    if (globalcfg.find("tau_antiEle") != globalcfg.end()) 		tau_antiEle = globalcfg["tau_antiEle"];
+    if (globalcfg.find("tau_antiMuon") != globalcfg.end()) 		tau_antiMuon = globalcfg["tau_antiMuon"];
     
     if (globalcfg.find("tau_isolation_WP") != globalcfg.end())
 		tau_iso_WP = globalcfg["tau_isolation_WP"];
