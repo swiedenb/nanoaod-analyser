@@ -18,6 +18,28 @@ float apply_scale_factor() {
 	}
 };
 
+// calculate prefiring weight for the corresponding years
+float prefire_factor(	const rvec<float>& jet_pt,
+						const rvec<float>& jet_eta,
+						const rvec<float>& photon_pt,
+						const rvec<float>& photon_eta) {
+	if (config::era == 2018)
+		return 1.0;
+	float weight = 1.0;
+	for (uint i = 0; i < photon_pt.size(); i++) {
+		weight *= 1 - config::prefire_photon_hist->GetBinContent(
+								config::prefire_photon_hist->GetXaxis()->FindBin(photon_eta[i]), 
+								config::prefire_photon_hist->GetYaxis()->FindBin(photon_pt[i]) );
+	}
+	for (uint i = 0; i < photon_pt.size(); i++) {
+		weight *= 1 - config::prefire_jet_hist->GetBinContent(
+								config::prefire_jet_hist->GetXaxis()->FindBin(jet_eta[i]), 
+								config::prefire_jet_hist->GetYaxis()->FindBin(jet_pt[i]) );
+	}
+	return weight;		
+};
+
+
 // get tau fake rate scale factor (for both e an mu)
 float tau_fake_scale_factor(	const float& tau_eta,
 								const float& tau_phi,

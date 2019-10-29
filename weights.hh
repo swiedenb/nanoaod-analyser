@@ -17,6 +17,11 @@ float pu_weight( const float nvtx_true);
 
 float apply_scale_factor();
 
+float prefire_factor(	const rvec<float>& jet_pt,
+						const rvec<float>& jet_eta,
+						const rvec<float>& photon_pt,
+						const rvec<float>& photon_eta);
+
 float tau_fake_scale_factor(	const float& tau_eta,
 								const float& tau_phi,
 								const rvec<int>& gen_pdgID,

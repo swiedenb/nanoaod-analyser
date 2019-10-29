@@ -3,6 +3,7 @@
 
 #include "include/json.hpp"
 #include <TH1.h>
+#include <TH2.h>
 #include <map>
 using json = nlohmann::json;
 
@@ -34,6 +35,8 @@ namespace config {
     extern int era;
     
     extern TH1D* pileup_hist;
+    extern TH2D* prefire_photon_hist;
+    extern TH2D* prefire_jet_hist;
     
     extern std::string run_type;
     

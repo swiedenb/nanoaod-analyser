@@ -103,9 +103,9 @@ void fill_hists(RNode df,
 		dummy = df.Define("total_weight", "1.0");
 	} else {
 		if (config::W_kfactor_hist != NULL) {
-			dummy = df.Define("total_weight", "pileup_weight*TauScaleFactor*top_pt_weight*genWeight*W_kfactor*TauEleFakeScaleFactor*TauMuonFakeScaleFactor*1.0");
+			dummy = df.Define("total_weight", "pileup_weight*TauScaleFactor*top_pt_weight*genWeight*W_kfactor*TauEleFakeScaleFactor*TauMuonFakeScaleFactor*PrefiringWeight*1.0");
 		} else {
-			dummy = df.Define("total_weight", "pileup_weight*TauScaleFactor*top_pt_weight*genWeight*TauEleFakeScaleFactor*TauMuonFakeScaleFactor*1.0");
+			dummy = df.Define("total_weight", "pileup_weight*TauScaleFactor*top_pt_weight*genWeight*TauEleFakeScaleFactor*TauMuonFakeScaleFactor*PrefiringWeight*1.0");
 		}
 	}
 	auto tau_pt = dummy.Histo1D(	{((TString) "Tau_pt" + config::run_type), "", 					6000u, 0, 6000}, 		"sel_Tau_pt", 				"total_weight");
@@ -350,7 +350,8 @@ void analyse(	RNode df,
 										                                    const rvec<float>& gen_eta,
 										                                    const rvec<float>& gen_phi) {
 																				return tau_fake_scale_factor(tau_eta, tau_phi, gen_pdgID, gen_eta, gen_phi, 13);
-																			}, {"sel_Tau_eta", "sel_Tau_phi", "GenPart_pdgId", "GenPart_eta", "GenPart_phi"});
+																			}, {"sel_Tau_eta", "sel_Tau_phi", "GenPart_pdgId", "GenPart_eta", "GenPart_phi"})
+										.Define("PrefiringWeight", prefire_factor, {"Jet_pt", "Jet_eta", "Photon_pt", "Photon_eta"});
 		
 		if (config::W_kfactor_hist != NULL) {
 			saviour = defineScaleFactors.Define("W_kfactor", get_kfactor, {"GenPart_pdgId", "GenPart_mass"});

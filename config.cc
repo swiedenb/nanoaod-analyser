@@ -50,6 +50,10 @@ namespace config {
     // pileup hist
     TH1D* pileup_hist = NULL;
     
+    // Prefire histograms
+    TH2D* prefire_photon_hist = NULL;
+    TH2D* prefire_jet_hist = NULL;
+    
     // W kfactor hist
     TH1D* W_kfactor_hist = NULL;
     
@@ -145,6 +149,22 @@ bool config::load_config_file(json cfg)
 		TFile* pileup_file = new TFile(((std::string) cfg["pileup_file"]).c_str(), "READ");
 		pileup_hist = (TH1D*) pileup_file->Get("pileup");
 		
+		// read in prefiring jet file
+		if (cfg.find("prefire_jet_hist") != cfg.end()) {
+			TFile* prefire_jet_file = new TFile(((std::string) cfg["prefire_jet_hist"]).c_str(), "READ");
+			std::string pj_hist_name = (std::string) cfg["prefire_jet_hist"];
+			pj_hist_name.resize( pj_hist_name.size() - 5);
+			prefire_jet_hist = (TH2D*) prefire_jet_file->Get(pj_hist_name.c_str());
+		}
+		
+		// read in prefiring photon file
+		if (cfg.find("prefire_photon_hist") != cfg.end()) {
+			TFile* prefire_photon_file = new TFile(((std::string) cfg["prefire_photon_hist"]).c_str(), "READ");
+			std::string pp_hist_name = (std::string) cfg["prefire_jet_hist"];
+			pp_hist_name.resize( pp_hist_name.size() - 5);
+			prefire_photon_hist = (TH2D*) prefire_photon_file->Get(pp_hist_name.c_str());
+		}
+			
 		// read in tau scale factor file
 		TFile* tau_scale_file = new TFile(((std::string) cfg["tau_scale_factor_file"]).c_str(), "READ");
 		TH2D* tau_scale_hist = (TH2D*) tau_scale_file->Get("tau_scale_factor");		
