@@ -19,6 +19,7 @@ using RNode = ROOT::RDF::RNode;
 json goldenjson;
 json cfg;
 
+
 // Particle number cut: how many "trues" in mask
 bool nparticle_cut(const rvec<bool>& mask) {
 	return std::count(mask.begin(), mask.end(), true) == 1;
@@ -278,24 +279,42 @@ void analyse(	RNode df,
 	// Trigger turn on cut
 	auto trigger_obj1 = met_filter.Filter("MET_pt > " + std::to_string(config::met_pt), "Avoid trigger turn on with MET object, pT>" + std::to_string(config::met_pt));
 	
-	auto trigger_obj2 = trigger_obj1.Filter([](const rvec<float>& tau_pt){	if (tau_pt.size() == 0) return false;
-																			if (tau_pt[0] < config::tau_pt) return false;
-																			return true;
-																		}, {"Tau_pt"}, "Avoid trigger turn on with tau object");
+	auto trigger_obj2 = trigger_obj1.Filter([]  (const rvec<float>& tau_pt) {	if (tau_pt.size() == 0) return false;
+																				if (tau_pt[0] < config::tau_pt) return false;
+																				return true;
+																			}, {"Tau_pt"}, "Avoid trigger turn on with tau object");
 																		
-	auto trigger_obj3 = trigger_obj2.Filter([](const rvec<float>& jet_pt,
-											   const rvec<float>& jet_eta){	if (jet_pt.size() == 0) return false;
-																			for (uint i = 0; i < jet_pt.size(); i++) {
-																				if (abs(jet_eta[i]) > 2.3)
-																					continue;
-																				if (jet_pt[i] > 100)
-																					return true;
-																			}
-	                    													return true;
-	                    												}, {"Jet_pt", "Jet_eta"}, "Avoid trigger turn on with jet object, pT>100");
+	auto trigger_obj3 = trigger_obj2.Filter([] (const rvec<float>& jet_pt,
+											    const rvec<float>& jet_eta){	
+												    if (jet_pt.size() == 0) return false;
+													for (uint i = 0; i < jet_pt.size(); i++) {
+														if (abs(jet_eta[i]) > 2.3)
+															continue;
+														if (jet_pt[i] > 100)
+															return true;
+														}
+	                    								return true;
+	                    							}, {"Jet_pt", "Jet_eta"}, "Avoid trigger turn on with jet object, pT>100");
 	
 	
-	
+	RNode fixed = trigger_obj3;
+	// handle 2018 HEM problem
+	if (config::era == 2018) {
+		fixed = trigger_obj3.Filter([]         (const rvec<float>& jet_pt,
+												const rvec<float>& jet_eta,
+												const rvec<float>& jet_phi){
+													for (uint i = 0; i < jet_pt.size(); i++) {
+														if (jet_pt[i] < 30)
+															continue;
+														if ( jet_eta[i] < -3.0 || jet_eta[i] > -1.3 )
+															continue;
+														if ( jet_phi[i] < -1.57 || jet_phi[i] > -0.87 )
+															continue;
+														return false;
+												    }
+													return true;
+												}, {"Jet_pt", "Jet_eta", "Jet_phi"}, "2018 HEM problem");
+	}
 	
 	// fill preselection
 	if (config::run_type == "") {
