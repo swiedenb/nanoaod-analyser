@@ -19,6 +19,7 @@ using RNode = ROOT::RDF::RNode;
 json goldenjson;
 json cfg;
 
+std::multimap< std::string, ROOT::RDF::RResultPtr<TH1D> > hist_dict;
 
 // Particle number cut: how many "trues" in mask
 bool nparticle_cut(const rvec<bool>& mask) {
@@ -47,18 +48,14 @@ RNode trigger(	RNode df,
 				TFile* outFile) {
 	auto triggered = df.Filter(config::trigger, "Trigger requirement");
 	if (!config::runOnData) {
-		outFile->cd();
-		outFile->mkdir("Trigger");
-		outFile->cd("Trigger");
 		auto trigger_eff_tau_all = df.Histo1D( 	{"Tau_pt_all", "GenVisTau_pt", 600, 0, 6000}, "GenVisTau_pt");
 		auto trigger_eff_met_all = df.Histo1D(	{"MET_pt_all", "MET_pt", 600, 0, 6000}, "MET_pt");
 		auto trigger_eff_tau_passed = triggered.Histo1D( 	{"Tau_pt_passed", "Tau_pt", 600, 0, 6000}, "GenVisTau_pt");
 		auto trigger_eff_met_passed = triggered.Histo1D(	{"MET_pt_passed", "MET_pt", 600, 0, 6000}, "MET_pt");
-		trigger_eff_tau_all->Write();
-		trigger_eff_met_all->Write();
-		trigger_eff_tau_passed->Write();
-		trigger_eff_met_passed->Write();
-		outFile->cd();
+		hist_dict.emplace("Trigger", trigger_eff_tau_all);
+		hist_dict.emplace("Trigger", trigger_eff_met_all);
+		hist_dict.emplace("Trigger", trigger_eff_tau_passed);
+		hist_dict.emplace("Trigger", trigger_eff_met_passed);
 	};
 	return triggered;
 }
@@ -71,11 +68,11 @@ void fill_preselection(	RNode df,
 	auto tau_phi = df.Histo1D(	{"Tau_phi", "", 		100u, -3.2, 3.2}, 					"Tau_phi_ES");	
 	auto met_pt = df.Histo1D(	{"MET_pt", "MET_pt", 	6000u, 0, 6000}, 					"MET_pt");
 	auto met_phi = df.Histo1D(	{"MET_phi", "MET_phi", 	100u, -3.2, 3.2}, 					"MET_phi");
-	tau_pt->Write();
-	tau_eta->Write();
-	tau_phi->Write();
-	met_pt->Write();
-	met_phi->Write();
+	hist_dict.emplace("Preselection", tau_pt);
+	hist_dict.emplace("Preselection", tau_eta);
+	hist_dict.emplace("Preselection", tau_phi);
+	hist_dict.emplace("Preselection", met_pt);
+	hist_dict.emplace("Preselection", met_phi);
 };
 
 
@@ -87,17 +84,17 @@ void fill_datadriven(	RNode df,
 	auto tau_phi = df.Histo1D(	{"Tau_phi", "", 		100u, -3.2, 3.2}, 					"Tau_phi_new");	
 	auto met_pt = df.Histo1D(	{"MET_pt", "MET_pt", 	6000u, 0, 6000}, 					"MET_pt");
 	auto met_phi = df.Histo1D(	{"MET_phi", "MET_phi", 	100u, -3.2, 3.2}, 					"MET_phi");
-	tau_pt->Write();
-	tau_eta->Write();
-	tau_phi->Write();
-	met_pt->Write();
-	met_phi->Write();
+	hist_dict.emplace("Datadriven", tau_pt);
+	hist_dict.emplace("Datadriven", tau_eta);
+	hist_dict.emplace("Datadriven", tau_phi);
+	hist_dict.emplace("Datadriven", met_pt);
+	hist_dict.emplace("Datadriven", met_phi);
 };
 
 
 // fill hist function - fills hists for each stage
-void fill_hists(RNode df, 
-				TFile* outFile) {
+void create_hists(	RNode df,
+					std::string name = "") {
 					
 	RNode dummy = df;
 	if (config::runOnData) {
@@ -119,16 +116,16 @@ void fill_hists(RNode df,
 	auto MT = dummy.Histo1D(		{((TString) "MT" + config::run_type), "", 						6000u, 0, 6000},		"MT", 						"total_weight");
 	auto nvtx = dummy.Histo1D(		{((TString) "nvtx" + config::run_type), "", 					80u, 0, 80}, 			"PV_npvs", 					"total_weight");
 	auto nvtxgood = dummy.Histo1D(	{((TString) "nvtx_good" + config::run_type), "", 				80u, 0, 80}, 			"PV_npvsGood", 				"total_weight");
-	tau_pt->Write();
-	tau_eta->Write();
-	tau_phi->Write();
-	met_pt->Write();
-	met_phi->Write();
-	pt_ratio->Write();
-	dphi->Write();
-	MT->Write();
-	nvtx->Write();
-	nvtxgood->Write();
+	hist_dict.emplace(name, tau_pt);
+	hist_dict.emplace(name, tau_eta);
+	hist_dict.emplace(name, tau_phi);
+	hist_dict.emplace(name, met_pt);
+	hist_dict.emplace(name, met_phi);
+	hist_dict.emplace(name, pt_ratio);
+	hist_dict.emplace(name, dphi);
+	hist_dict.emplace(name, MT);
+	hist_dict.emplace(name, nvtx);
+	hist_dict.emplace(name, nvtxgood);
 };
 
 bool gen_match(	const rvec<int>& gen_pdgId,
@@ -262,14 +259,10 @@ void calc_datadriven(TFile* outFile, RNode df) {
 
 // analyse function - gets called for each systematic
 void analyse(	RNode df, 
-				TFile* outFile) {
-	TString folder = "";
-	if (config::run_type == "") {
-		folder = "Selection";
-	} else {
-		folder = "Systs";
-	};
+				TFile* outFile) {	
 	
+	// init counter
+	auto eventcounter = df.Sum("genWeight");
 	
 	// Select trigger requirements
 	auto triggered = trigger(df, outFile);
@@ -318,8 +311,6 @@ void analyse(	RNode df,
 	
 	// fill preselection
 	if (config::run_type == "") {
-		outFile->cd();
-		outFile->cd("Preselection");
 		fill_preselection(trigger_obj3, outFile);
 	}
 	
@@ -331,7 +322,7 @@ void analyse(	RNode df,
 	
 	
 	// this is for datadriven part of analysis
-	calc_datadriven(outFile, masked);
+	//~ calc_datadriven(outFile, masked);
 	
 	
 	// Select events with certain number of taus, which fulfil all acceptance & id
@@ -380,41 +371,35 @@ void analyse(	RNode df,
 		}
 	}
 	
-	// Define Stage 0: any event with one tau fulfilling acceptance and id
-	outFile->cd();
-	if (outFile->GetDirectory(folder + "/Stage0") == 0)
-		outFile->mkdir(folder + "/Stage0");
-	outFile->cd(folder + "/Stage0");
-	
-	fill_hists(saviour, outFile);
-	
-	
-	
+	// Define Stage 0: any event with one tau fulfilling acceptance and id	
+	create_hists(saviour, "Stage0");
 	
 	// actual analysis cut  -- 0.7 < pt/ptmiss < 1.3 
 	auto df_ptmiss = saviour.Filter("(pt_o_ptmiss > 0.7) && (pt_o_ptmiss < 1.3)", "pt_miss_cut");
-	
-	// Define Stage 1: fulfils ptmiss cut
-	outFile->cd();
-	if (outFile->GetDirectory(folder + "/Stage1") == 0)
-		outFile->mkdir(folder + "/Stage1");
-	outFile->cd(folder + "/Stage1");
-	
-	fill_hists(df_ptmiss, outFile);
-	
-	
+	create_hists(df_ptmiss, "Stage1");
 	
 	// dphi cut
 	auto df_dphi = df_ptmiss.Filter("(dphi > 2.4) || (dphi < -2.4)", "deltaPhi_cut");
+	create_hists(df_dphi, "Stage2");
 	
-	// Define Stage 1: fulfils deltaphi cut
+	// write all hists
 	outFile->cd();
-	if (outFile->GetDirectory(folder + "/Stage2") == 0)
-		outFile->mkdir(folder + "/Stage2");
-	outFile->cd(folder + "/Stage2");
+	for (const auto& it : hist_dict) {
+		const auto& folder_name = it.first;
+		auto hist = it.second;
+		if (outFile->GetDirectory(folder_name.c_str()) == 0)
+			outFile->mkdir(folder_name.c_str());
+		outFile->cd(folder_name.c_str());
+		hist->Write();
+		outFile->cd();
+	}
 	
-	fill_hists(df_dphi, outFile);
-	
+	auto counter = TH1D("counter", "counter", 10u, 0, 10);
+	counter.SetBinContent(1, *eventcounter);
+	counter.SetEntries(*eventcounter);
+	counter.Write();
+
+
 	//~ if (!config::runOnData) {
 		//~ for (uint pdf_weight_i = 0; pdf_weight_i < (*df_dphi.Sum( "nLHEPdfWeight" ) / *df_dphi.Count()); pdf_weight_i++) {
 			//~ std::string pdf_column_title = "pdf_weight" + std::to_string(pdf_weight_i);
@@ -432,9 +417,14 @@ void analyse(	RNode df,
 	//~ }
 		
 	
-	// Print information about cut efficiencies
-	df_dphi.Report()->Print();
-	std::cout << "This was run_type: " << config::run_type << std::endl;
+	// Print information about cut efficiencies !! WARNING; THIS TRIGGERS A NEW EVENT LOOP !!!
+	//~ df_dphi.Report()->Print();
+	//~ std::cout << "This was run_type: " << config::run_type << std::endl;
+	
+	//~ // Prints the graph to the rd1.dot file in the current directory
+	//~ ROOT::RDF::SaveGraph(df, "./mydot.dot");
+	//~ // Prints the graph to standard output
+	//~ ROOT::RDF::SaveGraph(df);
 }
 
 std::vector < std::string > readfiles(const char* file_directory) {
@@ -481,12 +471,6 @@ int main (int argc, char* argv[]) {
 		// create outputfile to write hists
 		TFile* outFile = new TFile(tmp, "RECREATE");
 		
-		// create wanted folder structure
-		outFile->mkdir("Custom");
-		outFile->mkdir("Preselection");
-		outFile->mkdir("Selection");
-		outFile->mkdir("Systs");
-		
 		// Files to run over
 		std::string path = it.key();
 		std::vector< std::string > names = readfiles(path.c_str());
@@ -500,7 +484,12 @@ int main (int argc, char* argv[]) {
 		config::load_config_file(cfg);
 			
 		// open root tree
-		auto df = ROOT::RDataFrame("Events", names);
+		RNode df = ROOT::RDataFrame("Events", names);
+		std::vector<std::string> colNames = df.GetColumnNames();
+		if (std::find(colNames.begin(), colNames.end(), "genWeight") == colNames.end()) {
+			df = df.Define("genWeight", "1.0");
+		}
+		auto loopcounter = df.Filter([](ULong64_t e){if (0ULL == e) std::cout << "Running evtloop" << std::endl; return true;},{"rdfentry_"});
 		
 		
 		// enable multithreading
@@ -511,15 +500,7 @@ int main (int argc, char* argv[]) {
 			goldenjson_file.open(cfg["json_file"]);
 			goldenjson_file >> goldenjson;
 
-			auto jsoncleaned = df.Filter(json_check, {"run", "luminosityBlock"}, "json cleaning");
-			// create counter
-			auto counter = TH1I("counter", "counter", 10u, 0, 10);
-			counter.SetBinContent(1, *jsoncleaned.Count());
-			counter.SetEntries(*jsoncleaned.Count());
-		
-			// save counter
-			outFile->cd();
-			counter.Write();
+			auto jsoncleaned = loopcounter.Filter(json_check, {"run", "luminosityBlock"}, "json cleaning");
 			
 			auto catch_up = jsoncleaned.Define("Tau_pt_ES", [](const rvec<float>& tau_pt){return tau_pt;}, {"Tau_pt"})
 										.Define("Tau_eta_ES", [](const rvec<float>& tau_eta){return tau_eta;}, {"Tau_eta"})
@@ -531,16 +512,9 @@ int main (int argc, char* argv[]) {
 		
 		} else {
 			// counter - PSWeight is filled with ones
-			auto definecounts = df.Define("abs_gen_weight", [](const float& x){return std::abs(x);}, {"genWeight"})
-								  .Define("top_pt_weight", calc_top_pt_reweighting, {"GenPart_pdgId", "GenPart_pt"});
-			auto counter = TH1D("counter", "counter", 10u, 0, 10);
-			counter.SetBinContent(1, *df.Count());
-			counter.SetEntries(*df.Count());
-			counter.SetBinContent(2, *definecounts.Sum("genWeight"));
-			// save counter
-			outFile->cd();
-			counter.Write();
-		
+			auto definecounts = loopcounter.Define("abs_gen_weight", [](const float& x){return std::abs(x);}, {"genWeight"})
+											.Define("top_pt_weight", calc_top_pt_reweighting, {"GenPart_pdgId", "GenPart_pt"});
+					
 			// clean gen files
 			auto gencleaned = definecounts.Filter(clean_gen_file, {"GenPart_pdgId", "GenPart_mass"}, "gen cleaning");
 			
@@ -556,10 +530,11 @@ int main (int argc, char* argv[]) {
 			// this function does all analysis steps
 			analyse(tau_es_applies, outFile);
 		};
+		
+		hist_dict.clear();
 		delete outFile;
 		
-		
-		// enable multithreading
+		// disable multithreading
 		ROOT::DisableImplicitMT();
 	};
 	return 0;
