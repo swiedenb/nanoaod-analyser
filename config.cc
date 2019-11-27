@@ -10,6 +10,11 @@ namespace config {
 	
 	// trigger string
 	std::string trigger = "HLT_MediumChargedIsoPFTau180HighPtRelaxedIso_Trk50_eta2p1_1pr || HLT_MediumChargedIsoPFTau180HighPtRelaxedIso_Trk50_eta2p1";
+
+	// primary vertex cuts
+    float pv_z = 24;
+    float pv_d = 2;
+    float pv_ndof = 4;
 	
 	// minimum tau pt
     float tau_pt = 80;
@@ -98,6 +103,12 @@ bool config::load_config_file(json cfg)
     cfg_json >> globalcfg;
     
     // always check, if the key is actually in the config file
+    if (globalcfg.find("PV_Z") != globalcfg.end())
+  pv_z = globalcfg["PV_Z"];
+    if (globalcfg.find("PV_D") != globalcfg.end())
+  pv_d = globalcfg["PV_D"];
+    if (globalcfg.find("PV_NDOF") != globalcfg.end())
+  pv_ndof = globalcfg["PV_NDOF"];
     if (globalcfg.find("tau_pt") != globalcfg.end()) 			tau_pt = globalcfg["tau_pt"];
     if (globalcfg.find("tau_eta") != globalcfg.end()) 			tau_eta = globalcfg["tau_eta"];
     if (globalcfg.find("muon_pt") != globalcfg.end()) 			muon_pt = globalcfg["muon_pt"];

@@ -289,8 +289,21 @@ void analyse(	RNode df,
 	                    								return true;
 	                    							}, {"Jet_pt", "Jet_eta"}, "Avoid trigger turn on with jet object, pT>100");
 	
+
+	auto good_primary_vertex = trigger_obj3.Filter([](	const float& pvx, 
+								const float& pvy, 
+								const float& pvz,
+								const float& pvndof ){
+									if (std::abs(pvz) > config::pv_z)
+										return false;
+									if (pow(pvx, 2) + pow(pvy, 2) > config::pv_d)
+										return false;
+									if (pvndof < config::pv_ndof)
+										return false;
+									return true;
+						}, {"PV_x", "PV_y", "PV_z", "PV_ndof"}, "Ensure good primary vertex selection");
 	
-	RNode fixed = trigger_obj3;
+	RNode fixed = good_primary_vertex;
 	// handle 2018 HEM problem
 	if (config::era == 2018) {
 		fixed = trigger_obj3.Filter([]         (const rvec<float>& jet_pt,

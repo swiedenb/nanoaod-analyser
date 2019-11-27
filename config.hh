@@ -10,6 +10,10 @@ using json = nlohmann::json;
 namespace config {
 	extern std::string trigger;
 	
+	extern float pv_z;
+	extern float pv_d;
+	extern float pv_ndof;
+
 	extern float tau_pt;
 	extern float tau_eta;
 	extern std::string tau_dm;
