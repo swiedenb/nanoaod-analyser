@@ -328,7 +328,7 @@ void analyse(	RNode df,
 	}
 	
 	// creates mask, which fills bool tags for taus which fulfil id and are in acceptance
-	auto masked = trigger_obj3.Define("Tau_mask", tau_acceptance_and_id,	{"Tau_pt_ES", "Tau_eta_ES", config::tau_dm, config::tau_iso, config::tau_antiEle, config::tau_antiMuon})
+	auto masked = trigger_obj3.Define("Tau_mask", tau_acceptance_and_id_and_dm,	{"Tau_pt_ES", "Tau_eta_ES", config::tau_dm, "Tau_decayMode", config::tau_iso, config::tau_antiEle, config::tau_antiMuon})
 							  .Define("Muon_mask", muon_acceptance_and_id, {"Muon_pt", "Muon_eta", "Muon_softId", "Muon_pfRelIso03_all"})
 							  .Define("Electron_mask", ele_acceptance_and_id, {"Electron_pt", "Electron_eta", "Electron_cutBased"});
 	

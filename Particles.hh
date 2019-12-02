@@ -12,12 +12,24 @@ template < typename T >
 using rvec = ROOT::VecOps::RVec<T>;
 using RNode = ROOT::RDF::RNode;
 
+
 rvec<bool> tau_acceptance_and_id(	const rvec<float>& pt, 
-									const rvec<float>& eta, 
-									const rvec<bool> & dm,
-									const rvec<UChar_t>& iso, 
-									const rvec<UChar_t>& antiEle_disc, 
-									const rvec<UChar_t>& antiMu_disc);
+                                    const rvec<float>& eta, 
+                                    const rvec<bool> & dm,
+                                    const rvec<UChar_t>& iso, 
+                                    const rvec<UChar_t>& antiEle_disc, 
+                                    const rvec<UChar_t>& antiMu_disc);
+
+
+
+rvec<bool> tau_acceptance_and_id_and_dm(	const rvec<float>& pt, 
+                                            const rvec<float>& eta, 
+                                            const rvec<bool>& dm,
+                                            const rvec<int>& dm_number, 
+                                            const rvec<UChar_t>& iso, 
+                                            const rvec<UChar_t>& antiEle_disc, 
+                                            const rvec<UChar_t>& antiMu_disc);
+
 
 
 rvec<bool> muon_acceptance_and_id(	const rvec<float>& pt, 
