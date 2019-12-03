@@ -4,6 +4,7 @@
 #include <TFile.h>
 #include <TROOT.h>
 #include "TH2D.h"
+#include "TF1.h"
 
 namespace config {
 	// set default values for all used quantities
@@ -77,21 +78,15 @@ namespace config {
     // this checks systematics later
     std::string run_type = "";
     
-    // lets start with systematics
+    // lets start with systematics and scale factors
     
     // tau scale factors
-    double tau_scale = 1.0;
-    double tau_scale_up = 1.0;
-    double tau_scale_down = 1.0;
+    TF1* tau_scale = NULL;
+    TF1* tau_scale_up = NULL;
+    TF1* tau_scale_down = NULL;
     
     // tau energy scale
-    std::map< std::string, std::vector< double > > tau_energy_scale = {
-							{"h+-", 			{1.0, 1.0, 1.0} },
-							{"h+- pi0s", 		{1.0, 1.0, 1.0} },
-							{"h+-h+-h+-", 		{1.0, 1.0, 1.0} },
-							{"h+-h+-h+- pi0s", 	{1.0, 1.0, 1.0} }
-						};
-	
+    TH1D* tau_energy_scale_hist = NULL;
 }
 
 bool config::load_config_file(json cfg)
@@ -101,6 +96,27 @@ bool config::load_config_file(json cfg)
     std::ifstream cfg_json;
     cfg_json.open("cfg/analysis_config.cfg");
     cfg_json >> globalcfg;
+
+    auto int_to_WP = [] (const int WP_int) {
+        switch (WP_int) {
+            case 1:
+                return (std::string) "VVVLoose";
+            case 2:
+                return (std::string) "VVLoose";
+            case 4:
+                return (std::string) "VLoose";
+            case 8:
+                return (std::string) "Loose";
+            case 16:
+                return (std::string) "Medium";
+            case 32:
+                return (std::string) "Tight";
+            case 64:
+                return (std::string) "VTight";
+            case 128:
+                return (std::string) "VVTight";
+        };
+    };
     
     // always check, if the key is actually in the config file
     if (globalcfg.find("PV_Z") != globalcfg.end())
@@ -139,23 +155,6 @@ bool config::load_config_file(json cfg)
     if (cfg.find("era") != cfg.end())				era = cfg["era"];
     
     if (!runOnData) { 
-		auto getrightbincontent = [](TH2D* hist, const int binX, const int binY, std::string type) {
-			if (type == "") {
-				return hist->GetBinContent(	hist->GetXaxis()->FindBin( binX ),
-											hist->GetYaxis()->FindBin( binY ) );
-			} else if (type == "Up") {
-				return hist->GetBinContent(	hist->GetXaxis()->FindBin( binX ),
-											hist->GetYaxis()->FindBin( binY ) )
-							+ hist->GetBinErrorUp(	hist->GetXaxis()->FindBin( binX ),
-													hist->GetYaxis()->FindBin( binY ) );
-			} else if (type == "Down") {
-				return hist->GetBinContent(	hist->GetXaxis()->FindBin( binX ),
-											hist->GetYaxis()->FindBin( binY ) )
-							- hist->GetBinErrorLow(	hist->GetXaxis()->FindBin( binX ),
-													hist->GetYaxis()->FindBin( binY ) );
-			}
-			return 1.0;
-		};
 		// read in pileup file
 		TFile* pileup_file = new TFile(((std::string) cfg["pileup_file"]).c_str(), "READ");
 		pileup_hist = (TH1D*) pileup_file->Get("pileup");
@@ -177,41 +176,18 @@ bool config::load_config_file(json cfg)
 		}
 			
 		// read in tau scale factor file
-		TFile* tau_scale_file = new TFile(((std::string) cfg["tau_scale_factor_file"]).c_str(), "READ");
-		TH2D* tau_scale_hist = (TH2D*) tau_scale_file->Get("tau_scale_factor");		
+		if (globalcfg.find("tau_scale_factor_file") != globalcfg.end()) {
+            TFile* tau_scale_file = new TFile(((std::string) globalcfg["tau_scale_factor_file"]).c_str(), "READ");
+            tau_scale = (TF1*) tau_scale_file->Get( (int_to_WP(tau_iso_WP) + "_cent").c_str() );		
+            tau_scale_down = (TF1*) tau_scale_file->Get( (int_to_WP(tau_iso_WP) + "_down").c_str() );		
+            tau_scale_up = (TF1*) tau_scale_file->Get( (int_to_WP(tau_iso_WP) + "_up").c_str() );
+        }
 		
-		tau_scale = getrightbincontent(tau_scale_hist, tau_iso_WP, era, "");											
-		tau_scale_up = getrightbincontent(tau_scale_hist, tau_iso_WP, era, "Up");												
-		tau_scale_down = getrightbincontent(tau_scale_hist, tau_iso_WP, era, "Down");													
-		delete tau_scale_hist;
-		delete tau_scale_file;  
-		
-		TFile* tau_energy_scale_file = new TFile(((std::string) cfg["tau_energy_scale_file"]).c_str(), "READ");
-		TH2D* tau_energy_scale_hist = (TH2D*) tau_energy_scale_file->Get("tau_energy_scale");
-		
-		tau_energy_scale["h+-"][0] = getrightbincontent(tau_energy_scale_hist, 1, era, "Up");
-		tau_energy_scale["h+-"][1] = getrightbincontent(tau_energy_scale_hist, 1, era, "");
-		tau_energy_scale["h+-"][2] = getrightbincontent(tau_energy_scale_hist, 1, era, "Down");
-		
-		tau_energy_scale["h+- pi0s"][0] = getrightbincontent(tau_energy_scale_hist, 2, era, "Up");
-		tau_energy_scale["h+- pi0s"][1] = getrightbincontent(tau_energy_scale_hist, 2, era, "");
-		tau_energy_scale["h+- pi0s"][2] = getrightbincontent(tau_energy_scale_hist, 2, era, "Down");
-		
-		tau_energy_scale["h+-h+-h+-"][0] = getrightbincontent(tau_energy_scale_hist, 3, era, "Up");
-		tau_energy_scale["h+-h+-h+-"][1] = getrightbincontent(tau_energy_scale_hist, 3, era, "");
-		tau_energy_scale["h+-h+-h+-"][2] = getrightbincontent(tau_energy_scale_hist, 3, era, "Down");
-		
-		tau_energy_scale["h+-h+-h+- pi0s"][0] = getrightbincontent(tau_energy_scale_hist, 4, era, "Up");
-		tau_energy_scale["h+-h+-h+- pi0s"][1] = getrightbincontent(tau_energy_scale_hist, 4, era, "");
-		tau_energy_scale["h+-h+-h+- pi0s"][2] = getrightbincontent(tau_energy_scale_hist, 4, era, "Down");
-		
-		delete tau_energy_scale_hist; 
-		delete tau_energy_scale_file;
-		
-		if (cfg.find("W_kfactor_file") != cfg.end() ) {
-			TFile* W_kfactor_file = new TFile(((std::string) cfg["W_kfactor_file"]).c_str(), "READ");
-			W_kfactor_hist = (TH1D*) W_kfactor_file->Get("h_t_kfac_add");
-		}
+        // read in tau energy scale factor (decay mode dependent)
+        if (globalcfg.find("tau_energy_scale_factor_file") != globalcfg.end()) {
+            TFile* tau_energy_scale_file = new TFile(((std::string) globalcfg["tau_energy_scale_factor_file"]).c_str(), "READ");
+            tau_energy_scale_hist = (TH1D*) tau_energy_scale_file->Get("tes");
+        }
 		
 		if (cfg.find("tau_ele_fake_scale_file") != cfg.end() ) {
 			TFile* tau_ele_fake_scale_file = new TFile(((std::string) cfg["tau_ele_fake_scale_file"]).c_str(), "READ");
@@ -222,5 +198,11 @@ bool config::load_config_file(json cfg)
 			TFile* tau_muon_fake_scale_file = new TFile(((std::string) cfg["tau_muon_fake_scale_file"]).c_str(), "READ");
 			tau_muo_fake_hist = (TH1D*) tau_muon_fake_scale_file->Get("tau_muon_fake_rate");
 		}
-	}
+    
+		if (cfg.find("W_kfactor_file") != cfg.end() ) {
+			TFile* W_kfactor_file = new TFile(((std::string) cfg["W_kfactor_file"]).c_str(), "READ");
+			W_kfactor_hist = (TH1D*) W_kfactor_file->Get("h_t_kfac_add");
+		}
+
+	} //!runOnData
 }

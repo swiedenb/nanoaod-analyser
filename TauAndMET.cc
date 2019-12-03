@@ -359,7 +359,7 @@ void analyse(	RNode df,
 	RNode saviour = mtcalc;
 	// Define and calculate weights for monte carlo
 	if (!config::runOnData) {
-		auto defineScaleFactors = mtcalc.Define("TauScaleFactor", apply_scale_factor, {})
+		auto defineScaleFactors = mtcalc.Define("TauScaleFactor", apply_scale_factor, {"sel_Tau_pt"})
 										.Define("TauEleFakeScaleFactor", [](const float& tau_eta,
 										                                    const float& tau_phi,
 										                                    const rvec<int>& gen_pdgID,
@@ -498,15 +498,20 @@ int main (int argc, char* argv[]) {
 			
 		// open root tree
 		RNode df = ROOT::RDataFrame("Events", names);
-		std::vector<std::string> colNames = df.GetColumnNames();
+	
+        // enable multithreading
+        ROOT::EnableImplicitMT();
+		
+
+        std::vector<std::string> colNames = df.GetColumnNames();
 		if (std::find(colNames.begin(), colNames.end(), "genWeight") == colNames.end()) {
 			df = df.Define("genWeight", "1.0");
 		}
 		auto loopcounter = df.Filter([](ULong64_t e){if (0ULL == e) std::cout << "Running evtloop" << std::endl; return true;},{"rdfentry_"});
 		
-		
-		// enable multithreading
-		ROOT::EnableImplicitMT();
+	
+	
+	
 		
 		if (config::runOnData) {
 			std::ifstream goldenjson_file;

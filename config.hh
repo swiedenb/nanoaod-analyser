@@ -4,6 +4,7 @@
 #include "include/json.hpp"
 #include <TH1.h>
 #include <TH2.h>
+#include <TF1.h>
 #include <map>
 using json = nlohmann::json;
 
@@ -44,18 +45,20 @@ namespace config {
     
     extern std::string run_type;
     
-    bool load_config_file(json cfg);
+    extern TF1* tau_scale;
+    extern TF1* tau_scale_up;
+    extern TF1* tau_scale_down;
     
-    extern double tau_scale;
-    extern double tau_scale_up;
-    extern double tau_scale_down;
-    
-    extern std::map< std::string, std::vector< double > > tau_energy_scale;
+    extern TH1D* tau_energy_scale_hist;
     
     extern TH1D* W_kfactor_hist;
     
     extern TH1D* tau_ele_fake_hist;
     extern TH1D* tau_muo_fake_hist;
+
+    
+    bool load_config_file(json cfg);
+    void clean_memory(); 
 }
 
 #endif

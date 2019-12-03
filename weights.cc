@@ -8,14 +8,13 @@ float pu_weight( const float nvtx_true){
 
 
 // get tau scale factor
-float apply_scale_factor() {
-    if (config::run_type == "_TauScaleUp") {
-        return config::tau_scale_up;
-    } else if (config::run_type == "_TauScaleDown") {
-        return config::tau_scale_down;
-    } else {
-        return config::tau_scale;
-	}
+float apply_scale_factor(   const float& tau_pt) {
+    if (config::run_type == "_TauScaleUp") 
+        return (config::tau_scale_up)->Eval(tau_pt);
+    else if (config::run_type == "_TauScaleDown") 
+        return (config::tau_scale_down)->Eval(tau_pt);
+    else
+        return (config::tau_scale)->Eval(tau_pt);
 };
 
 // calculate prefiring weight for the corresponding years

@@ -15,7 +15,7 @@ using rvec = ROOT::VecOps::RVec<T>;
 
 float pu_weight( const float nvtx_true);
 
-float apply_scale_factor();
+float apply_scale_factor(const float& tau_pt);
 
 float prefire_factor(	const rvec<float>& jet_pt,
 						const rvec<float>& jet_eta,
