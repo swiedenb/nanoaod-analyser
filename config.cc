@@ -189,14 +189,14 @@ bool config::load_config_file(json cfg)
             tau_energy_scale_hist = (TH1D*) tau_energy_scale_file->Get("tes");
         }
 		
-		if (cfg.find("tau_ele_fake_scale_file") != cfg.end() ) {
-			TFile* tau_ele_fake_scale_file = new TFile(((std::string) cfg["tau_ele_fake_scale_file"]).c_str(), "READ");
-			tau_ele_fake_hist = (TH1D*) tau_ele_fake_scale_file->Get("tau_ele_fake_rate");
+		if (globalcfg.find("tau_ele_fake_scale_file") != globalcfg.end() ) {
+			TFile* tau_ele_fake_scale_file = new TFile(((std::string) globalcfg["tau_ele_fake_scale_file"]).c_str(), "READ");
+			tau_ele_fake_hist = (TH1D*) tau_ele_fake_scale_file->Get("VLoose");
 		}
 		
-		if (cfg.find("tau_muon_fake_scale_file") != cfg.end() ) {
-			TFile* tau_muon_fake_scale_file = new TFile(((std::string) cfg["tau_muon_fake_scale_file"]).c_str(), "READ");
-			tau_muo_fake_hist = (TH1D*) tau_muon_fake_scale_file->Get("tau_muon_fake_rate");
+		if (globalcfg.find("tau_muon_fake_scale_file") != globalcfg.end() ) {
+			TFile* tau_muon_fake_scale_file = new TFile(((std::string) globalcfg["tau_muon_fake_scale_file"]).c_str(), "READ");
+			tau_muo_fake_hist = (TH1D*) tau_muon_fake_scale_file->Get("Loose");
 		}
     
 		if (cfg.find("W_kfactor_file") != cfg.end() ) {
