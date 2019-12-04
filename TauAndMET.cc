@@ -95,27 +95,16 @@ void fill_datadriven(	RNode df,
 // fill hist function - fills hists for each stage
 void create_hists(	RNode df,
 					std::string name = "") {
-					
-	RNode dummy = df;
-	if (config::runOnData) {
-		dummy = df.Define("total_weight", "1.0");
-	} else {
-		if (config::W_kfactor_hist != NULL) {
-			dummy = df.Define("total_weight", "pileup_weight*TauScaleFactor*top_pt_weight*genWeight*W_kfactor*TauEleFakeScaleFactor*TauMuonFakeScaleFactor*PrefiringWeight*1.0");
-		} else {
-			dummy = df.Define("total_weight", "pileup_weight*TauScaleFactor*top_pt_weight*genWeight*TauEleFakeScaleFactor*TauMuonFakeScaleFactor*PrefiringWeight*1.0");
-		}
-	}
-	auto tau_pt = dummy.Histo1D(	{((TString) "Tau_pt" + config::run_type), "", 					6000u, 0, 6000}, 		"sel_Tau_pt", 				"total_weight");
-	auto tau_eta = dummy.Histo1D(	{((TString) "Tau_eta" + config::run_type), "", 					100u, -5, 5}, 			"sel_Tau_eta", 				"total_weight");
-	auto tau_phi = dummy.Histo1D(	{((TString) "Tau_phi" + config::run_type), "", 					100u, -3.2, 3.2}, 		"sel_Tau_phi", 				"total_weight");
-	auto met_pt = dummy.Histo1D(	{((TString) "MET_pt" + config::run_type), "", 					6000u, 0, 6000}, 		"MET_pt", 					"total_weight");
-	auto met_phi = dummy.Histo1D(	{((TString) "MET_phi" + config::run_type), "", 					100u, -3.2, 3.2}, 		"MET_phi", 					"total_weight");
-	auto pt_ratio = dummy.Histo1D(	{((TString) "pT_ratio" + config::run_type), "", 				100u, 0, 10}, 			"pt_o_ptmiss", 				"total_weight");
-	auto dphi = dummy.Histo1D(		{((TString) "DeltaPhi" + config::run_type), "", 				100u, 0, 3.2}, 			"dphi", 					"total_weight");
-	auto MT = dummy.Histo1D(		{((TString) "MT" + config::run_type), "", 						6000u, 0, 6000},		"MT", 						"total_weight");
-	auto nvtx = dummy.Histo1D(		{((TString) "nvtx" + config::run_type), "", 					80u, 0, 80}, 			"PV_npvs", 					"total_weight");
-	auto nvtxgood = dummy.Histo1D(	{((TString) "nvtx_good" + config::run_type), "", 				80u, 0, 80}, 			"PV_npvsGood", 				"total_weight");
+	auto tau_pt = df.Histo1D(	{((TString) "Tau_pt" + config::run_type), "", 					6000u, 0, 6000}, 		"sel_Tau_pt", 				"total_weight");
+	auto tau_eta = df.Histo1D(	{((TString) "Tau_eta" + config::run_type), "", 					100u, -5, 5}, 			"sel_Tau_eta", 				"total_weight");
+	auto tau_phi = df.Histo1D(	{((TString) "Tau_phi" + config::run_type), "", 					100u, -3.2, 3.2}, 		"sel_Tau_phi", 				"total_weight");
+	auto met_pt = df.Histo1D(	{((TString) "MET_pt" + config::run_type), "", 					6000u, 0, 6000}, 		"MET_pt", 					"total_weight");
+	auto met_phi = df.Histo1D(	{((TString) "MET_phi" + config::run_type), "", 					100u, -3.2, 3.2}, 		"MET_phi", 					"total_weight");
+	auto pt_ratio = df.Histo1D(	{((TString) "pT_ratio" + config::run_type), "", 				100u, 0, 10}, 			"pt_o_ptmiss", 				"total_weight");
+	auto dphi = df.Histo1D(		{((TString) "DeltaPhi" + config::run_type), "", 				100u, 0, 3.2}, 			"dphi", 					"total_weight");
+	auto MT = df.Histo1D(		{((TString) "MT" + config::run_type), "", 						6000u, 0, 6000},		"MT", 						"total_weight");
+	auto nvtx = df.Histo1D(		{((TString) "nvtx" + config::run_type), "", 					80u, 0, 80}, 			"PV_npvs", 					"total_weight");
+	auto nvtxgood = df.Histo1D(	{((TString) "nvtx_good" + config::run_type), "", 				80u, 0, 80}, 			"PV_npvsGood", 				"total_weight");
 	hist_dict.emplace(name, tau_pt);
 	hist_dict.emplace(name, tau_eta);
 	hist_dict.emplace(name, tau_phi);
@@ -356,7 +345,7 @@ void analyse(	RNode df,
 						   .Define("dphi", delta_phi, {"sel_Tau_phi", "MET_phi"});
 	
 	
-	RNode saviour = mtcalc;
+	RNode define_weights = mtcalc;
 	// Define and calculate weights for monte carlo
 	if (!config::runOnData) {
 		auto defineScaleFactors = mtcalc.Define("TauScaleFactor", apply_scale_factor, {"sel_Tau_pt"})
@@ -377,18 +366,35 @@ void analyse(	RNode df,
 										.Define("PrefiringWeight", prefire_factor, {"Jet_pt", "Jet_eta", "Photon_pt", "Photon_eta"});
 		
 		if (config::W_kfactor_hist != NULL) {
-			saviour = defineScaleFactors.Define("W_kfactor", get_kfactor, {"GenPart_pdgId", "GenPart_mass"});
+			define_weights = defineScaleFactors.Define("W_kfactor", get_kfactor, {"GenPart_pdgId", "GenPart_mass"});
 		}
 		else {
-			saviour = defineScaleFactors;
+			define_weights = defineScaleFactors;
 		}
 	}
 	
-	// Define Stage 0: any event with one tau fulfilling acceptance and id	
-	create_hists(saviour, "Stage0");
+
+    // Define weights
+	RNode total_weights = define_weights; 
+	if (config::runOnData) {
+		total_weights = define_weights.Define("total_weight", "1.0");
+	} else {
+		if (config::W_kfactor_hist != NULL) {
+			total_weights = define_weights.Define("total_weight", "pileup_weight*TauScaleFactor*top_pt_weight*genWeight*W_kfactor*TauEleFakeScaleFactor*TauMuonFakeScaleFactor*PrefiringWeight*1.0");
+		} else {
+			total_weights = define_weights.Define("total_weight", "pileup_weight*TauScaleFactor*top_pt_weight*genWeight*TauEleFakeScaleFactor*TauMuonFakeScaleFactor*PrefiringWeight*1.0");
+		}
+	}
+
+    // Ensure, counter is correct with weights
+    auto voidcounter = total_weights.Sum("genWeight");
+    auto weightedcounter = total_weights.Sum("total_weight");
+	    
+    // Define Stage 0: any event with one tau fulfilling acceptance and id	
+	create_hists(total_weights, "Stage0");
 	
 	// actual analysis cut  -- 0.7 < pt/ptmiss < 1.3 
-	auto df_ptmiss = saviour.Filter("(pt_o_ptmiss > 0.7) && (pt_o_ptmiss < 1.3)", "pt_miss_cut");
+	auto df_ptmiss = total_weights.Filter("(pt_o_ptmiss > 0.7) && (pt_o_ptmiss < 1.3)", "pt_miss_cut");
 	create_hists(df_ptmiss, "Stage1");
 	
 	// dphi cut
@@ -408,8 +414,8 @@ void analyse(	RNode df,
 	}
 	
 	auto counter = TH1D("counter", "counter", 10u, 0, 10);
-	counter.SetBinContent(1, *eventcounter);
-	counter.SetEntries(*eventcounter);
+	counter.SetBinContent(1, *eventcounter - *voidcounter + *weightedcounter);
+	counter.SetEntries(*eventcounter - *voidcounter + *weightedcounter);
 	counter.Write();
 
 
