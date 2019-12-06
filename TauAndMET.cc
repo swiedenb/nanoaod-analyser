@@ -44,8 +44,7 @@ rvec <float> select_part_quants(const rvec<float>& quantity,
 };
 
 // fill trigger plots
-RNode trigger(	RNode df,
-				TFile* outFile) {
+RNode trigger(	RNode df) {
 	auto triggered = df.Filter(config::trigger, "Trigger requirement");
 	if (!config::runOnData) {
 		auto trigger_eff_tau_all = df.Histo1D( 	{"Tau_pt_all", "GenVisTau_pt", 600, 0, 6000}, "GenVisTau_pt");
@@ -61,8 +60,7 @@ RNode trigger(	RNode df,
 }
 
 // fill preselection histograms
-void fill_preselection(	RNode df,
-						TFile* outFile) {
+void fill_preselection(	RNode df) {
 	auto tau_pt = df.Histo1D(	{"Tau_pt", "", 			6000u, 0, 6000}, 					"Tau_pt_ES");
 	auto tau_eta = df.Histo1D(	{"Tau_eta", "", 		100u, -5, 5}, 						"Tau_eta_ES");
 	auto tau_phi = df.Histo1D(	{"Tau_phi", "", 		100u, -3.2, 3.2}, 					"Tau_phi_ES");	
@@ -78,17 +76,17 @@ void fill_preselection(	RNode df,
 
 // fill datadriven histograms
 void fill_datadriven(	RNode df,
-						TFile* outFile) {
+                        std::string name = "") {
 	auto tau_pt = df.Histo1D(	{"Tau_pt", "", 			6000u, 0, 6000}, 					"Tau_pt_new");
 	auto tau_eta = df.Histo1D(	{"Tau_eta", "", 		100u, -5, 5}, 						"Tau_eta_new");
 	auto tau_phi = df.Histo1D(	{"Tau_phi", "", 		100u, -3.2, 3.2}, 					"Tau_phi_new");	
 	auto met_pt = df.Histo1D(	{"MET_pt", "MET_pt", 	6000u, 0, 6000}, 					"MET_pt");
 	auto met_phi = df.Histo1D(	{"MET_phi", "MET_phi", 	100u, -3.2, 3.2}, 					"MET_phi");
-	hist_dict.emplace("Datadriven", tau_pt);
-	hist_dict.emplace("Datadriven", tau_eta);
-	hist_dict.emplace("Datadriven", tau_phi);
-	hist_dict.emplace("Datadriven", met_pt);
-	hist_dict.emplace("Datadriven", met_phi);
+	hist_dict.emplace("Datadriven_" + name, tau_pt);
+	hist_dict.emplace("Datadriven_" + name, tau_eta);
+	hist_dict.emplace("Datadriven_" + name, tau_phi);
+	hist_dict.emplace("Datadriven_" + name, met_pt);
+	hist_dict.emplace("Datadriven_" + name, met_phi);
 };
 
 
@@ -143,7 +141,7 @@ bool gen_match(	const rvec<int>& gen_pdgId,
 
 
 // Calculate datadriven distributions
-void calc_datadriven(TFile* outFile, RNode df) {
+void calc_datadriven(RNode df) {
 	// calc pt_ratio vector
 	auto pt_ratio = df.Define("pt_ratio", ratio_vector, {"Tau_pt_ES", "MET_pt"});
 	
@@ -151,34 +149,34 @@ void calc_datadriven(TFile* outFile, RNode df) {
 									.Filter(nparticle_veto, {"Electron_mask"}, "electron_veto");
 	
 	// begin evaluating the branch with non isolated taus for datadriven background estimation in QCD and ZToNuNu						 
-	auto noniso_tau = no_light_lepton.Define("NonIso_Tau", [](		const rvec<float>& pt, 
-															const rvec<float>& eta,
-															const rvec<bool>& dm,
-															const rvec<UChar_t>& iso, 
-															const rvec<UChar_t>& antiEle_disc, 
-															const rvec<UChar_t>& antiMu_disc) {
-												// check if tau is in acceptance and fulfils id requirements BUT NOT ISO
-												auto mask_pt = pt > config::tau_pt;
+	auto noniso_tau = no_light_lepton.Define("NonIso_Tau", [](	const rvec<float>& pt, 
+															    const rvec<float>& eta,
+														    	const rvec<bool>& dm,
+														    	const rvec<UChar_t>& iso, 
+														    	const rvec<UChar_t>& antiEle_disc, 
+														    	const rvec<UChar_t>& antiMu_disc) {
+		// check if tau is in acceptance and fulfils id requirements BUT NOT ISO
+		auto mask_pt = pt > config::tau_pt;
 	
-												// tau eta cut
-												auto mask_eta = abs(eta) < config::tau_eta;
+		// tau eta cut
+		auto mask_eta = abs(eta) < config::tau_eta;
 												
-												// tau decay mode
-												auto mask_dm = dm;
+		// tau decay mode
+		auto mask_dm = dm;
 													
-												// tau iso requirement (1: VVLoose, 2: VLoose, 4: Loose, 8: Medium, 16: Tight, 32: VTight, 64: VVTight)
-												auto mask_iso = !((iso & config::tau_iso_WP) == config::tau_iso_WP);
+		// tau iso requirement (1: VVLoose, 2: VLoose, 4: Loose, 8: Medium, 16: Tight, 32: VTight, 64: VVTight)
+		auto mask_iso = !((iso & config::tau_iso_WP) == config::tau_iso_WP);
 												
-												// Anti Electron discriminator (1: VLoose, 2: Loose, 4: Medium, 8: Tight, 16: VTight)
-												auto mask_antiele = (config::tau_antiE_WP & antiEle_disc) == config::tau_antiE_WP;
+	    // Anti Electron discriminator (1: VLoose, 2: Loose, 4: Medium, 8: Tight, 16: VTight)
+		auto mask_antiele = (config::tau_antiE_WP & antiEle_disc) == config::tau_antiE_WP;
 												
-												// Anti Muon discriminator (1: Loose, 2: Tight)
-												auto mask_antimu = (config::tau_antiMu_WP & antiMu_disc) == config::tau_antiMu_WP;
+		// Anti Muon discriminator (1: Loose, 2: Tight)
+		auto mask_antimu = (config::tau_antiMu_WP & antiMu_disc) == config::tau_antiMu_WP;
 												
-												// return vector with true, if particle fulfils all requirements - else false
-												rvec <bool> mask = mask_pt & mask_eta & mask_dm & mask_iso & mask_antiele & mask_antimu;
-												return mask;
-											}, 
+		// return vector with true, if particle fulfils all requirements - else false
+		rvec <bool> mask = mask_pt & mask_eta & mask_dm & mask_iso & mask_antiele & mask_antimu;
+		return mask;
+	}, 
 											{"Tau_pt_ES", "Tau_eta_ES", config::tau_dm, config::tau_iso, "Tau_idAntiEle", "Tau_idAntiMu"});
 											
 		
@@ -228,22 +226,10 @@ void calc_datadriven(TFile* outFile, RNode df) {
 																	return true;
 																}, {"pt_ratio"}, "Signal region - Isolated");
 	
-	outFile->cd();
-	outFile->mkdir("Datadriven");
-	outFile->mkdir("Datadriven/NonSignalNonIso");
-	outFile->mkdir("Datadriven/SignalNonIso");
-	outFile->mkdir("Datadriven/NonSignalIso");
-	outFile->mkdir("Datadriven/SignalIso");
-	
-	outFile->cd("Datadriven/NonSignalNonIso");
-	fill_datadriven(noniso_nonsignal_region, outFile);
-	outFile->cd("Datadriven/SignalNonIso");
-	fill_datadriven(noniso_signal_region, outFile);
-	outFile->cd("Datadriven/NonSignalIso");
-	fill_datadriven(iso_nonsignal_region, outFile);
-	outFile->cd("Datadriven/SignalIso");
-	fill_datadriven(iso_signal_region, outFile);
-	outFile->cd();
+	fill_datadriven(noniso_nonsignal_region, "NonIsoNonSignal");
+	fill_datadriven(noniso_signal_region, "NonIsoSignal");
+	fill_datadriven(iso_nonsignal_region, "IsoNonSignal");
+	fill_datadriven(iso_signal_region, "IsoSignal");
 };
 
 // analyse function - gets called for each systematic
@@ -254,7 +240,7 @@ void analyse(	RNode df,
 	auto eventcounter = df.Sum("genWeight");
 	
 	// Select trigger requirements
-	auto triggered = trigger(df, outFile);
+	auto triggered = trigger(df);
 								
 	auto met_filter = triggered.Filter("Flag_METFilters", "MET filters");
 		
@@ -294,7 +280,7 @@ void analyse(	RNode df,
 	
 	RNode fixed = good_primary_vertex;
 	// handle 2018 HEM problem
-	if (config::era == 2018) {
+	/* if (config::era == 2018) {
 		fixed = trigger_obj3.Filter([]         (const rvec<float>& jet_pt,
 												const rvec<float>& jet_eta,
 												const rvec<float>& jet_phi){
@@ -309,22 +295,22 @@ void analyse(	RNode df,
 												    }
 													return true;
 												}, {"Jet_pt", "Jet_eta", "Jet_phi"}, "2018 HEM problem");
-	}
+	} */
 	
 	// fill preselection
 	if (config::run_type == "") {
-		fill_preselection(trigger_obj3, outFile);
+		fill_preselection(good_primary_vertex);
 	}
 	
 	// creates mask, which fills bool tags for taus which fulfil id and are in acceptance
-	auto masked = trigger_obj3.Define("Tau_mask", tau_acceptance_and_id_and_dm,	{"Tau_pt_ES", "Tau_eta_ES", config::tau_dm, "Tau_decayMode", config::tau_iso, config::tau_antiEle, config::tau_antiMuon})
+	auto masked = good_primary_vertex.Define("Tau_mask", tau_acceptance_and_id_and_dm,	{"Tau_pt_ES", "Tau_eta_ES", config::tau_dm, "Tau_decayMode", config::tau_iso, config::tau_antiEle, config::tau_antiMuon})
 							  .Define("Muon_mask", muon_acceptance_and_id, {"Muon_pt", "Muon_eta", "Muon_softId", "Muon_pfRelIso03_all"})
 							  .Define("Electron_mask", ele_acceptance_and_id, {"Electron_pt", "Electron_eta", "Electron_cutBased"});
 	
 	
 	
 	// this is for datadriven part of analysis
-	//~ calc_datadriven(outFile, masked);
+	calc_datadriven(masked);
 	
 	
 	// Select events with certain number of taus, which fulfil all acceptance & id
