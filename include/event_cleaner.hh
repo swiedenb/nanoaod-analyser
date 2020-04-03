@@ -7,7 +7,7 @@
 #include <TROOT.h>
 #include <ROOT/RVec.hxx>
 
-#include "../config.hh"
+#include "config.hh"
 using json = nlohmann::json;
 
 template < typename T >

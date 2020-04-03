@@ -17,21 +17,25 @@ bool json_check(const UInt_t& runnumber, const UInt_t& luminumber) {
 
 // Gen Cleaning
 bool clean_gen_file(const rvec<int>& pdgID, const rvec<float>& mass) {
-	if (config::gen_pdgID == 0)
+	if (config::gen_pdgID.size() == 0)
 		return true;
 		
-		
-	// mass gen cleaning
-	if (config::cut_type == "mass") {
-		for (uint i = 0; i < pdgID.size(); i++) {
-			if ( abs(pdgID[i]) == config::gen_pdgID	) {
-				if ((mass[i] > config::cut_value_min) && (mass[i] < config::cut_value_max)) 
-					return true;
-				else
-					return false;
-			}
-		}
-	}
+    else {
+        if ( config::gen_pdgID.size() == 1 and config::gen_pdgID.at(0) == 0) return true;
+	    // mass gen cleaning
+	    if (config::cut_type == "mass") {
+	    	for (uint i = 0; i < pdgID.size(); i++) {
+                for (uint j = 0; j < config::gen_pdgID.size(); j++) {
+	    		    if ( abs(pdgID[i]) == config::gen_pdgID.at(j)) {
+	    		    	if ((mass[i] > config::cut_value_min) && (mass[i] < config::cut_value_max)) 
+	    		    		return true;
+	    		    	else
+	    		    		return false;
+	    		    }
+                }
+	    	}
+	    }
+    }
 	return true;
 };
 
