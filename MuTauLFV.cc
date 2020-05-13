@@ -335,7 +335,7 @@ void analyse(	RNode df,
 	
 	// creates mask, which fills bool tags for taus which fulfil id and are in acceptance
 	auto masked = good_primary_vertex.Define("Tau_mask", tau_acceptance_and_id_and_dm,	{"Tau_pt_ES", "Tau_eta_ES", "Tau_dz", config::tau_dm, "Tau_decayMode", config::tau_iso, config::tau_antiEle, config::tau_antiMuon})
-							  .Define("Muon_mask", muon_acceptance_and_id, {"Muon_pt", "Muon_eta", "Muon_highPtId", "Muon_pfRelIso03_all"})
+							  .Define("Muon_mask", muon_acceptance_and_id, {"Muon_pt", "Muon_eta", "Muon_highPtId", "Muon_tkIsoId"})
 							  .Define("DiMuon_mask", di_muon_id, {"Muon_pt", "Muon_eta", "Muon_highPtId", "Muon_tkRelIso"})
 							  .Define("Electron_mask", ele_acceptance_and_simpleid, {"Electron_pt", "Electron_eta", "Electron_cutBased_HEEP"});
 	
