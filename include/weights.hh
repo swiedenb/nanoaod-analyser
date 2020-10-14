@@ -33,6 +33,11 @@ float ele_id_scale_factor( const rvec<float>& ele_pt,
                             const rvec<float>& ele_eta,
                             const rvec<float>& ele_mask,
                             const std::string& run_type);
+float dd_fakerate( const rvec<float>& tau_pt,
+                            const float & tau_pt_over_jet_pt,
+                            const rvec<int>& col_idx,
+                            const rvec<bool>& tau_mask,
+                            const std::string& run_type);
 
 float muon_id_scale_factor( const rvec<float>& muon_pt,
                             const rvec<float>& muon_eta,

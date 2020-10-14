@@ -1,7 +1,7 @@
 #include "weights.hh"
 
 // Get Pileup weight from file
-float pu_weight( const float& nvtx_true, const std::string& unc = ""){
+float pu_weight( const int& nvtx_true, const std::string& unc = ""){
     if (unc == "")
         return config::pileup_hist->GetBinContent( config::pileup_hist->FindBin(nvtx_true) );
     else if (unc == "Up")
@@ -24,13 +24,25 @@ float prefire_factor(	const rvec<float>& jet_pt,
 								config::prefire_photon_hist->GetXaxis()->FindBin(photon_eta[i]), 
 								config::prefire_photon_hist->GetYaxis()->FindBin(photon_pt[i]) );
 	}
-	for (uint i = 0; i < photon_pt.size(); i++) {
+	for (uint i = 0; i < jet_pt.size(); i++) {
 		weight *= 1 - config::prefire_jet_hist->GetBinContent(
 								config::prefire_jet_hist->GetXaxis()->FindBin(jet_eta[i]), 
 								config::prefire_jet_hist->GetYaxis()->FindBin(jet_pt[i]) );
 	}
 	return weight;		
 };
+// get DD fake rate 
+float dd_fakerate( const rvec<float>& tau_pt,
+                            const float & tau_pt_over_jet_pt,
+                            const rvec<int>& col_idx,
+                            const rvec<bool>& tau_mask,
+                            const std::string& run_type) {
+
+    float scale_factor = config::DD_FF->getFF(tau_pt[tau_mask][col_idx[0]],tau_pt_over_jet_pt,run_type);
+    return scale_factor;
+    
+
+}
 
 // get ele id scale factor
 float ele_id_scale_factor( const rvec<float>& ele_pt,
@@ -41,8 +53,9 @@ float ele_id_scale_factor( const rvec<float>& ele_pt,
     float scale_factor = 1.0;
     for (uint i = 0; i < ele_pt[ele_mask].size(); i++) {
         scale_factor *= config::ele_SF->getSFID(ele_pt[ele_mask][i],ele_eta[ele_mask][i], run_type);
-    return scale_factor;
     }
+    return scale_factor;
+    
 
 }
 // get muon id scale factor
@@ -54,8 +67,9 @@ float muon_id_scale_factor( const rvec<float>& muon_pt,
     float scale_factor = 1.0;
     for (uint i = 0; i < muon_pt[muon_mask].size(); i++) {
         scale_factor *= config::muon_SF->getSFID(muon_pt[muon_mask][i],muon_eta[muon_mask][i], run_type);
-    return scale_factor;
     }
+    return scale_factor;
+    
 
 }
 float muon_iso_scale_factor( const rvec<float>& muon_pt,
@@ -66,8 +80,9 @@ float muon_iso_scale_factor( const rvec<float>& muon_pt,
     float scale_factor = 1.0;
     for (uint i = 0; i < muon_pt[muon_mask].size(); i++) {
         scale_factor *= config::muon_SF->getSFISO(muon_pt[muon_mask][i],muon_eta[muon_mask][i], run_type);
-    return scale_factor;
     }
+    return scale_factor;
+    
 
 }
 
