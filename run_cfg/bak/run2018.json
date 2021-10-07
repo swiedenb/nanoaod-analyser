@@ -1,0 +1,76 @@
+{
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/QCD_Pt-50to80/" :  "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/QCD_Pt-80to120/" :  "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/QCD_Pt-120to170/" :  "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/QCD_Pt-170to300/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/QCD_Pt-300to470/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/QCD_Pt-470to600/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/QCD_Pt-600to800/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/QCD_Pt-800to1000/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/QCD_Pt-1000to1400/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/QCD_Pt-1400to1800/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/QCD_Pt-1800to2400/" : "cfg/mc_2018.cfg", 
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/QCD_Pt-2400to3200/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/QCD_Pt-3200toInf/" : "cfg/mc_2018.cfg",
+
+
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/NanoAOD/2018/MC/DYJetsToLL_M-50/" :  "cfg/mc_2018.cfg",
+
+
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2018/WWTo2L2Nu/" :  "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2018/WWTo1L1Nu2Q/" :  "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2018/WWTo4Q/" :  "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2018/WZTo3L1Nu/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2018/WZTo1L3Nu/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2018/WZTo1L1Nu2Q/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2018/WZTo2L2Q/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2018/ZZTo4L/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2018/ZZTo2L2Nu/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2018/ZZTo2L2Q/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2018/ZZTo2Q2Nu/" : "cfg/mc_2018.cfg",
+
+
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/TTTo2L2Nu/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/TTToSemiLeptonic/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/TTToHadronic/" : "cfg/mc_2018.cfg",
+
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/NanoAOD/2017/MC/ST_s-channel_top_leptonDecays/" :  "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/NanoAOD/2017/MC/ST_t-channel_antitop_4f_inclusiveDecays/" :  "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/NanoAOD/2017/MC/ST_t-channel_top_4f_inclusiveDecays/" :  "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/NanoAOD/2017/MC/ST_tW_antitop_5f_inclusiveDecays/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/NanoAOD/2017/MC/ST_tW_top_5f_inclusiveDecays/" : "cfg/mc_2018.cfg",
+
+
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WJetsToLNu/" : "cfg/WJetsToLNu.cfg",
+
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToENu_M-100/" : "cfg/WToTauNu_M-100.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToENu_M-200/" : "cfg/WToTauNu_M-200.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToENu_M-500/" : "cfg/WToTauNu_M-500.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToENu_M-1000/" : "cfg/WToTauNu_M-1000.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToENu_M-2000/" : "cfg/WToTauNu_M-2000.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToENu_M-3000/" : "cfg/WToTauNu_M-3000.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToENu_M-4000/" : "cfg/WToTauNu_M-4000.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToENu_M-5000/" : "cfg/WToENu_M-5000.cfg",
+
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToMuNu_M-100/" : "cfg/WToTauNu_M-100.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToMuNu_M-200/" : "cfg/WToTauNu_M-200.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToMuNu_M-500/" : "cfg/WToTauNu_M-500.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToMuNu_M-1000/" : "cfg/WToTauNu_M-1000.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToMuNu_M-2000/" : "cfg/WToTauNu_M-2000.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToMuNu_M-3000/" : "cfg/WToTauNu_M-3000.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToMuNu_M-4000/" : "cfg/WToTauNu_M-4000.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToMuNu_M-5000/" : "cfg/WToTauNu_M-5000.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToMuNu_M-6000/" : "cfg/WToTauNu_M-6000.cfg",
+
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToTauNu_M-100/" : "cfg/WToTauNu_M-100.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToTauNu_M-200/" : "cfg/WToTauNu_M-200.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToTauNu_M-500/" : "cfg/WToTauNu_M-500.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToTauNu_M-1000/" : "cfg/WToTauNu_M-1000.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToTauNu_M-2000/" : "cfg/WToTauNu_M-2000.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToTauNu_M-3000/" : "cfg/WToTauNu_M-3000.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToTauNu_M-4000/" : "cfg/WToTauNu_M-4000.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToTauNu_M-5000/" : "cfg/WToTauNu_M-5000.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/WToTauNu_M-6000/" : "cfg/WToTauNu_M-6000.cfg" 
+
+
+}

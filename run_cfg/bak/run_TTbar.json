@@ -1,0 +1,5 @@
+{
+"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv7_Post/2018/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/" : "cfg/TTTo2L2Nu.cfg",
+"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv7_Post/2018/TTToHadronic_TuneCP5_13TeV-powheg-pythia8/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv7_Post/2018/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/" : "cfg/mc_2018.cfg"
+}
