@@ -30,14 +30,27 @@ rvec<bool> tau_acceptance_and_id_and_dm(	const rvec<float>& pt,
                                             const rvec<int>& charge,
                                             const rvec<bool>& dm,
                                             const rvec<int>& dm_number, 
+                                            const rvec<int>& jetIdx, 
+                                            const rvec<UChar_t>& iso, 
+                                            const rvec<UChar_t>& antiEle_disc, 
+                                            const rvec<UChar_t>& antiMu_disc);
+
+rvec<bool> tau_acceptance_and_id_and_dm_noniso(	const rvec<float>& pt, 
+                                            const rvec<float>& eta, 
+                                            const rvec<float>& dz,
+                                            const rvec<int>& charge,
+                                            const rvec<bool>& dm,
+                                            const rvec<int>& dm_number, 
+                                            const rvec<int>& jetIdx, 
                                             const rvec<UChar_t>& iso, 
                                             const rvec<UChar_t>& antiEle_disc, 
                                             const rvec<UChar_t>& antiMu_disc);
 
 
-
+rvec<bool> muon_eta_mask( const rvec<float>& eta);
 rvec<bool> muon_acceptance_and_id(	const rvec<float>& pt, 
 									const rvec<float>& eta, 
+									const rvec<bool>& pfcand, 
 									const rvec<UChar_t>& id, 
 									const rvec<UChar_t>& iso
 									);
@@ -45,7 +58,7 @@ rvec<bool> muon_acceptance_and_id(	const rvec<float>& pt,
 rvec<bool> di_muon_id(const rvec<float>& pt, 
                                   const rvec<float>& eta, 
                                   const rvec<UChar_t>& id, 
-                                  const rvec<float>& iso) ;
+                                  const rvec<float>& iso);
 rvec<bool> ele_acceptance_and_id(	const rvec<float>& pt,
 									const rvec<float>& eta,
 									const rvec<Int_t>& id);

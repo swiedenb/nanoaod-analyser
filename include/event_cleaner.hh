@@ -17,7 +17,8 @@ extern json goldenjson;
 
 bool json_check(const UInt_t& runnumber, const UInt_t& luminumber); 
 
+rvec <int> pair_idx(const rvec<int>& pdgID, const rvec<int>& mother_idx);
 
-bool clean_gen_file(const rvec<int>& pdgID, const rvec<float>& mass);
+bool clean_gen_file(const float& lheht, const rvec<float>& lhept , const rvec<float>& lheeta, const rvec<float>& lhephi, const rvec<float>& lhemass, const rvec<int>& lhepdgid, const rvec<int>& status);
 
 #endif

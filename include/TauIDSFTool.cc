@@ -126,7 +126,7 @@ float TauESTool::getTES_highpt(const float& pt, const int& dm, const int& genmat
 TauIDSFTool::TauIDSFTool(const std::string& year, const std::string& id, const std::string& wp, const bool dm, const bool embedding): ID(id), WP(wp){
   
   bool verbose = false;
-  std::string datapath                = "/.automount/home/home__home1/institut_3a/wiedenbeck/PhD/analysis/nanoaod-analyser/cfg/SF/TauSFs/data/";
+  std::string datapath                = (std::string) getenv("MY_ANALYSIS_PATH") + "/cfg/SF/TauSFs/data/";
   std::vector<std::string> years      = {"2016Legacy","2017ReReco","2018ReReco"};
   std::vector<std::string> antiJetIDs = {"MVAoldDM2017v2","DeepTau2017v2p1VSjet"};
   std::vector<std::string> antiEleIDs = {"antiEleMVA6",   "DeepTau2017v2p1VSe"};
@@ -142,13 +142,7 @@ TauIDSFTool::TauIDSFTool(const std::string& year, const std::string& id, const s
     std::cerr << std::endl;
     assert(0);
   }
-  //if (ID == "AntiMu"){
-  //  ID = "antiMu3";
-  //}
-  //std::cout<<"HERE"<<ID<<std::endl;
-  //if (ID == "AntiEle"){
-  //  ID = "antiEleMVA6";
-  //}
+  
   if(std::find(antiJetIDs.begin(),antiJetIDs.end(),ID)!=antiJetIDs.end()){
     if(dm){
       TString filename;
@@ -280,4 +274,3 @@ float TauIDSFTool::getSFvsEta(double eta, int genmatch, const std::string& unc) 
   }
   return 1.0;
 }
-

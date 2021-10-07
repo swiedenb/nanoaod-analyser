@@ -1,0 +1,5 @@
+{
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/sphaleron/mcprod/gensim/nnpdf31/sphaleron_run2018/8tev/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/sphaleron/mcprod/gensim/nnpdf31/sphaleron_run2018/9tev/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/sphaleron/mcprod/gensim/nnpdf31/sphaleron_run2018/10tev/" : "cfg/mc_2018.cfg"
+}

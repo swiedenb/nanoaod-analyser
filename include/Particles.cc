@@ -39,12 +39,56 @@ rvec<bool> tau_acceptance_and_id(const rvec<float>& pt,
         return mask_pt & mask_eta & mask_charge & mask_dz & mask_dm & mask_iso & mask_antiele & mask_antimu;
 };
 
+rvec<bool> tau_acceptance_and_id_and_dm_noniso(const rvec<float>& pt, 
+                                        const rvec<float>& eta,
+                                        const rvec<float>& dz,
+                                        const rvec<int>& charge,
+                                        const rvec<bool>& dm,
+                                        const rvec<int>& dm_number,
+                                        const rvec<int>& jetIdx, 
+                                        const rvec<UChar_t>& iso, 
+                                        const rvec<UChar_t>& antiEle_disc, 
+                                        const rvec<UChar_t>& antiMu_disc) {
+        // tau pt cut
+        auto mask_pt = pt > 50.;
+        
+        // tau eta cut
+        auto mask_eta = abs(eta) < 2.3;
+        
+        // tau dz cut
+        auto mask_dz = abs(dz) < 0.2;
+        
+        // tau charge
+        auto mask_charge = charge != 0;
+        
+        // tau decay mode
+        auto mask_dm = dm;
+
+        // tau decay mode as integer
+        auto mask = not (dm_number == 5 || dm_number == 6);
+                
+        // tau iso requirement
+        auto mask_iso = ((1 & iso) == 1) && ((32 & iso) != 32);
+        
+        // Anti Electron discriminator
+        auto mask_antiele = (config::tau_antiE_WP & antiEle_disc) == config::tau_antiE_WP;
+        
+        // Anti Muon discriminator
+        auto mask_antimu = (config::tau_antiMu_WP & antiMu_disc) == config::tau_antiMu_WP;
+        
+        // Jet matching
+        auto mask_jetmatching = jetIdx != -1;
+        // return vector with true, if particle fulfils all requirements - else false
+        return mask_pt & mask_eta & mask_dz & mask_charge & mask & mask_dm & mask_iso & mask_antiele & mask_antimu & mask_jetmatching;
+        //return mask_pt & mask_eta & mask_dz & mask & mask_dm & mask_iso & mask_antiele & mask_antimu;
+};
 rvec<bool> tau_acceptance_and_id_and_dm(const rvec<float>& pt, 
                                         const rvec<float>& eta,
                                         const rvec<float>& dz,
                                         const rvec<int>& charge,
                                         const rvec<bool>& dm,
                                         const rvec<int>& dm_number,
+                                        const rvec<int>& jetIdx, 
                                         const rvec<UChar_t>& iso, 
                                         const rvec<UChar_t>& antiEle_disc, 
                                         const rvec<UChar_t>& antiMu_disc) {
@@ -74,16 +118,20 @@ rvec<bool> tau_acceptance_and_id_and_dm(const rvec<float>& pt,
         
         // Anti Muon discriminator
         auto mask_antimu = (config::tau_antiMu_WP & antiMu_disc) == config::tau_antiMu_WP;
+
+        // Jet Matching
+        auto mask_jetmatching = jetIdx != -1;
         
         // return vector with true, if particle fulfils all requirements - else false
-        return mask_pt & mask_eta & mask_dz & mask_charge & mask & mask_dm & mask_iso & mask_antiele & mask_antimu;
+        return mask_pt & mask_eta & mask_dz & mask_charge & mask & mask_dm & mask_iso & mask_antiele & mask_antimu & mask_jetmatching;
+        //return mask_pt & mask_eta & mask_dz & mask & mask_dm & mask_iso & mask_antiele & mask_antimu;
 };
 
 // check if event has a well seperated di muon pair
 rvec<bool> di_muon_id(const rvec<float>& pt, 
                                   const rvec<float>& eta, 
                                   const rvec<UChar_t>& id, 
-                                  const rvec<float>& iso) {
+                                  const rvec<float>& iso){ 
         // muon pt cut
         auto mask_pt = pt > 10.;
         
@@ -100,10 +148,14 @@ rvec<bool> di_muon_id(const rvec<float>& pt,
         // return vector with true, if particle fulfils all requirements - else false
         return mask_pt & mask_eta & mask_id & mask_iso;
 };
-
+rvec<bool> muon_eta_mask(const rvec<float>&eta){
+        auto mask_eta = abs(eta) < config::muon_eta;
+        return mask_eta;
+}
 // check if muon is in acceptance and fulfils id requirements
 rvec<bool> muon_acceptance_and_id(const rvec<float>& pt, 
                                   const rvec<float>& eta, 
+                                  const rvec<bool>& pfcand,
                                   const rvec<UChar_t>& id, 
                                   const rvec<UChar_t>& iso) {
         // muon pt cut
@@ -118,6 +170,8 @@ rvec<bool> muon_acceptance_and_id(const rvec<float>& pt,
         // muon relative iso id
         auto mask_iso = (iso >= 1);
 
+        // muon PF cand
+        auto mask_pf = pfcand == true;
         
         // return vector with true, if particle fulfils all requirements - else false
         return mask_pt & mask_eta & mask_id & mask_iso;

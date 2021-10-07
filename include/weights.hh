@@ -12,21 +12,37 @@
 template < typename T >
 using rvec = ROOT::VecOps::RVec<T>;
 
+float trigger_sf(   const rvec<float>& pt,
+                        const rvec<float>& eta,
+                        const rvec<bool>& mask,
+                        const std::string& unc); 
 
-float pu_weight( const float& nvtx_true,
+float GetTopQscale(
+                    const float& Mll,
+                    const std::string& var);
+float GetTopPDF(
+                    const float& Mll,
+                    const std::string& var);
+float pu_weight( const int& nvtx_true,
                  const std::string& unc);
 
+float muon_reco_eff( const rvec<float>& muon_pt,
+                               const rvec<float>& muon_eta,
+                               const rvec<float>& muon_phi,
+                               const rvec<float>& muon_mass,
+                               const rvec<bool>& muon_mask,
+                               const std::string runtype); 
 
 float prefire_factor(	const rvec<float>& jet_pt,
 						const rvec<float>& jet_eta,
 						const rvec<float>& photon_pt,
-						const rvec<float>& photon_eta);
+						const rvec<float>& photon_eta,
+                        const std::string& unc);
 
-float tau_fake_scale_factor(    const rvec<float>& tau_pt,
-                                const rvec<float>& tau_eta,
-                                const rvec<bool>& tau_mask,
-                                const rvec<UChar_t>& tau_genPartFlav,
-                                const std::string& part,
+float tau_fake_scale_factor(	const float& tau_pt,
+                                const float& tau_eta,
+								const UChar_t& tau_genPartFlav,
+								const std::string& part,
                                 const std::string& run_type);
 
 float ele_id_scale_factor( const rvec<float>& ele_pt,

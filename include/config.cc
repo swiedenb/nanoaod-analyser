@@ -6,12 +6,15 @@
 #include <TROOT.h>
 #include "TH2D.h"
 #include "TF1.h"
+#include "TPRegexp.h"
 
 namespace config {
 	// set default values for all used quantities
 	
 	// trigger string
 	std::string trigger = "HLT_Mu50 || HLT_TkMu100 || HLT_OldMu100";
+	// metfilters string
+	std::string metfilters = "Flag_goodVertices & Flag_globalSuperTightHalo2016Filter & Flag_HBHENoiseFilter & Flag_HBHENoiseIsoFilter & Flag_EcalDeadCellTriggerPrimitiveFilter & Flag_BadPFMuonFilter & Flag_ecalBadCalibFilterV2";
 
 	// primary vertex cuts
     float pv_z = 24;
@@ -44,6 +47,9 @@ namespace config {
     uint tau_iso_WP = 16;
     uint tau_antiMu_WP = 1;
     uint tau_antiE_WP = 2;
+    uint tau_iso_WP_datadriven = 16;
+    uint tau_antiMu_WP_datadriven = 1;
+    uint tau_antiE_WP_datadriven = 2;
     
     // muon id and iso 
     std::string muon_id = "HighPtID";
@@ -59,27 +65,53 @@ namespace config {
     
     // gen particle cut procedure
     std::vector<int> gen_pdgID;
+    int gen_motherpdgID;
     std::string cut_type = "";
     float cut_value_min = 0;
     float cut_value_max = 999999;
+    bool cut_double = false;
+    bool cut_single = false;
     
     // pileup hist
     TH1D* pileup_hist = NULL;
     TH1D* pileup_hist_up = NULL;
     TH1D* pileup_hist_down = NULL;
     
+    // trigger histograms
+    TH2D* trigger_hist = NULL;
+    TH2D* trigger_hist_up = NULL;
+    TH2D* trigger_hist_down = NULL;
+    // fakerate histograms
+    TH2D* ff_hist = NULL;
     // Prefire histograms
     TH2D* prefire_photon_hist = NULL;
     TH2D* prefire_jet_hist = NULL;
     
+    //WW shape uncertainty switch
+
+    bool wwuncertainty = false;
+    
     // W kfactor hist
     TH1D* W_kfactor_hist = NULL;
 
+    // TT?
+    bool TT = false;
+    bool DY = false;
+    bool WW = false;
     // runOnData?
     bool runOnData = false;
+    // signal?
+    bool runOnSignal = false;
     
+    // runDataDriven
+    bool runDataDriven = false;
+
+    // calcDataDriven
+    bool calcDataDriven = false;
+
     // which era?
     int era = 2018;
+    bool use_EEMET = false;
     
     // this checks systematics later
     std::string run_type = "";
@@ -158,6 +190,9 @@ bool config::load_config_file(json cfg)
     if (globalcfg.find("tau_isolation_WP") != globalcfg.end())  tau_iso_WP = globalcfg["tau_isolation_WP"];
     if (globalcfg.find("tau_antiE_WP") != globalcfg.end())      tau_antiE_WP = globalcfg["tau_antiE_WP"];
     if (globalcfg.find("tau_antiMu_WP") != globalcfg.end())     tau_antiMu_WP = globalcfg["tau_antiMu_WP"];
+    if (globalcfg.find("tau_isolation_WP_datadriven") != globalcfg.end())  tau_iso_WP_datadriven = globalcfg["tau_isolation_WP_datadriven"];
+    if (globalcfg.find("tau_antiE_WP_datadriven") != globalcfg.end())      tau_antiE_WP_datadriven = globalcfg["tau_antiE_WP_datadriven"];
+    if (globalcfg.find("tau_antiMu_WP_datadriven") != globalcfg.end())     tau_antiMu_WP_datadriven = globalcfg["tau_antiMu_WP_datadriven"];
 		
     if (globalcfg.find("muon_id") != globalcfg.end())           muon_id = globalcfg["muon_id"];
     if (globalcfg.find("muon_iso") != globalcfg.end())          muon_iso = globalcfg["muon_iso"];
@@ -173,16 +208,33 @@ bool config::load_config_file(json cfg)
                   ss.ignore();
          }
     }
+    if (cfg.find("gen_part_mother_pdg_id") != cfg.end())		gen_motherpdgID = cfg["gen_part_mother_pdg_id"];
     if (cfg.find("gen_cut_type") != cfg.end())		cut_type = cfg["gen_cut_type"];
+    if (cfg.find("gen_cut_double") != cfg.end())	cut_double = cfg["gen_cut_double"];
+    if (cfg.find("gen_cut_single") != cfg.end())	cut_single = cfg["gen_cut_single"];
     if (cfg.find("gen_cut_min") != cfg.end())		cut_value_min = cfg["gen_cut_min"];
     if (cfg.find("gen_cut_max") != cfg.end())		cut_value_max = cfg["gen_cut_max"];
     
+    if (cfg.find("wwuncertainty") != cfg.end())	    wwuncertainty = cfg["wwuncertainty"];
     if (cfg.find("runOnData") != cfg.end())			runOnData = cfg["runOnData"];
+    if (cfg.find("runOnSignal") != cfg.end())	    runOnSignal = cfg["runOnSignal"];
+    if (cfg.find("TT") != cfg.end())		    	TT = cfg["TT"];
+    if (cfg.find("DY") != cfg.end())		    	DY = cfg["DY"];
+    if (cfg.find("WW") != cfg.end())		    	WW = cfg["WW"];
+    if (cfg.find("runDataDriven") != cfg.end())		runDataDriven = cfg["runDataDriven"];
+    if (cfg.find("calcDataDriven") != cfg.end())	calcDataDriven = cfg["calcDataDriven"];
     if (cfg.find("era") != cfg.end())				era = cfg["era"];
+    if (cfg.find("use_EEMET") != cfg.end())			use_EEMET = cfg["use_EEMET"];
     
     if (cfg.find("PDF_set_name") != cfg.end())      pdf_set_name = cfg["PDF_set_name"];
     if (cfg.find("PDF_nWeights") != cfg.end())      pdf_nweights = cfg["PDF_nWeights"];
     if (cfg.find("PDF_SetID") != cfg.end())         pdf_setid = cfg["PDF_SetID"];
+    if (cfg.find("metfilters") != cfg.end())        metfilters = cfg["metfilters"];
+    if (cfg.find("trigger") != cfg.end())			trigger = cfg["trigger"];
+    TFile* ff_file = new TFile(("cfg/fakerate/fakerate_" + std::to_string(era) + ".root").c_str(), "READ");
+    TString ff_hist_name = "iso_fake_rate";
+    std::cout << "Reading in hist " << ff_hist_name << std::endl;
+    ff_hist = (TH2D*) ff_file->Get(ff_hist_name);
     
     if (!runOnData) { 
 		// read in pileup file
@@ -191,21 +243,60 @@ bool config::load_config_file(json cfg)
 		pileup_hist_up = (TH1D*) pileup_file->Get("pileup_up");
 		pileup_hist_down = (TH1D*) pileup_file->Get("pileup_down");
 		
-		// read in prefiring jet file
-		if (cfg.find("prefire_jet_hist") != cfg.end()) {
-			TFile* prefire_jet_file = new TFile(((std::string) cfg["prefire_jet_hist"]).c_str(), "READ");
-			std::string pj_hist_name = (std::string) cfg["prefire_jet_hist"];
-			pj_hist_name.resize( pj_hist_name.size() - 5);
-			prefire_jet_hist = (TH2D*) prefire_jet_file->Get(pj_hist_name.c_str());
-		}
-		
-		// read in prefiring photon file
-		if (cfg.find("prefire_photon_hist") != cfg.end()) {
-			TFile* prefire_photon_file = new TFile(((std::string) cfg["prefire_photon_hist"]).c_str(), "READ");
-			std::string pp_hist_name = (std::string) cfg["prefire_jet_hist"];
-			pp_hist_name.resize( pp_hist_name.size() - 5);
-			prefire_photon_hist = (TH2D*) prefire_photon_file->Get(pp_hist_name.c_str());
-		}
+
+        // read in prefiring jet file
+        if (cfg.find("prefire_jet_hist") != cfg.end()) {
+            TPRegexp r1("[^/]+(?=/$|$)");
+            TFile* prefire_jet_file = new TFile(((std::string) cfg["prefire_jet_hist"]).c_str(), "READ");
+            TString pj_hist_name = (std::string) cfg["prefire_jet_hist"];
+            pj_hist_name.Resize( pj_hist_name.Length() - 5);
+            pj_hist_name = pj_hist_name(r1);
+
+            std::cout << "Reading in hist " << pj_hist_name << std::endl;
+            prefire_jet_hist = (TH2D*) prefire_jet_file->Get(pj_hist_name);
+        }
+
+        if (cfg.find("trigger_hist") != cfg.end() && cfg.find("trigger_file") != cfg.end()) {
+            TPRegexp r1("[^/]+(?=/$|$)");
+            TFile* trigger_file = new TFile(((std::string) cfg["trigger_file"]).c_str(), "READ");
+            TString trigger_hist_name = (std::string) cfg["trigger_hist"];
+            std::cout << "Reading in hist " << trigger_hist_name << std::endl;
+            trigger_hist = (TH2D*) trigger_file->Get(trigger_hist_name);
+            if (cfg.find("trigger_hist_up") != cfg.end() ) {
+                TString trigger_hist_name = (std::string) cfg["trigger_hist_up"];
+                std::cout << "Reading in hist " << trigger_hist_name << std::endl;
+                trigger_hist_up = (TH2D*) trigger_file->Get(trigger_hist_name);
+            }
+            if (cfg.find("trigger_hist_down") != cfg.end() ) {
+                TString trigger_hist_name = (std::string) cfg["trigger_hist_down"];
+                std::cout << "Reading in hist " << trigger_hist_name << std::endl;
+                trigger_hist_down = (TH2D*) trigger_file->Get(trigger_hist_name);
+            }
+        }
+        // read in prefiring photon file
+        if (cfg.find("prefire_photon_hist") != cfg.end()) {
+            TPRegexp r1("[^/]+(?=/$|$)");
+            TFile* prefire_photon_file = new TFile(((std::string) cfg["prefire_photon_hist"]).c_str(), "READ");
+            TString pp_hist_name = (std::string) cfg["prefire_photon_hist"];
+            pp_hist_name.Resize( pp_hist_name.Length() - 5);
+            pp_hist_name = pp_hist_name(r1);
+            std::cout << "Reading in hist " << pp_hist_name << std::endl;
+            prefire_photon_hist = (TH2D*) prefire_photon_file->Get(pp_hist_name);
+        }
+
+//		// read in prefiring jet file
+//		if (cfg.find("prefire_jet_hist") != cfg.end() and cfg.find("prefire_jet_hist_name") != cfg.end()) {
+//			TFile* prefire_jet_file = new TFile(((std::string) cfg["prefire_jet_hist"]).c_str(), "READ");
+//			std::string pj_hist_name = (std::string) cfg["prefire_jet_hist_name"];
+//			prefire_jet_hist = (TH2D*) prefire_jet_file->Get(pj_hist_name.c_str());
+//		}
+//		
+//		// read in prefiring photon file
+//		if (cfg.find("prefire_photon_hist") != cfg.end() and cfg.find("prefire_photon_hist_name") != cfg.end()) {
+//			TFile* prefire_photon_file = new TFile(((std::string) cfg["prefire_photon_hist"]).c_str(), "READ");
+//			std::string pp_hist_name = (std::string) cfg["prefire_jet_hist_name"];
+//			prefire_photon_hist = (TH2D*) prefire_photon_file->Get(pp_hist_name.c_str());
+//		}
 			
 		if (cfg.find("W_kfactor_file") != cfg.end() ) {
 			TFile* W_kfactor_file = new TFile(((std::string) cfg["W_kfactor_file"]).c_str(), "READ");
@@ -267,58 +358,168 @@ bool config::load_config_file(json cfg)
                                 ele_id);
 
 	} //!runOnData
+    return true;
 }
 
 // reset config parameters, delete pointers etc.
 void config::clean_memory() {
-	// trigger string
-	trigger = "";
+	//// trigger string
+	//trigger = "";
+	//// METFilter string
+	//metfilters = "";
 
-	// primary vertex cuts
+	//// primary vertex cuts
+    //pv_z = 24;
+    //pv_d = 2;
+    //pv_ndof = 4;
+	//
+	//// minimum tau pt
+    //tau_pt = 80;
+    //
+    //// maximum tau eta
+    //tau_eta = 2.3;
+    //
+	//// minimum muon pt
+    //muon_pt = 20;
+    //
+    //// maximum muon eta
+    //muon_eta = 2.4;
+    //
+	//// minimum ele pt
+    //ele_pt = 20;
+    //
+    //// maximum ele eta
+    //ele_eta = 2.5;
+    //
+    //// working points of tau identification
+    //tau_dm = "Tau_idDecayModeNewDMs";
+    //tau_iso = "Tau_idMVAnewDM2017v2";
+    //tau_antiEle = "Tau_idAntiEle";
+	//tau_antiMuon = "Tau_idAntiMu";
+    //tau_iso_WP = 1;
+    //tau_antiMu_WP = 1;
+    //tau_antiE_WP = 1;
+    //
+    //// muon id 
+    //muon_id = "HighPtID";
+    //muon_id_WP = 2;
+
+    //// minimum missing transverse momentum
+    //met_pt = 150;
+    //
+    //// gen particle cut procedure
+    //gen_pdgID.clear();
+    //cut_type = "";
+    //cut_value_min = 0;
+    //cut_value_max = 999999;
+    //cut_double = false;
+    //cut_single = false;
+    //
+    //// pileup hist
+    //delete pileup_hist;
+    //delete pileup_hist_up;
+    //delete pileup_hist_down;
+    //pileup_hist = NULL;
+    //pileup_hist_up = NULL;
+    //pileup_hist_down = NULL;
+    //
+    //// Prefire histograms
+    //delete prefire_photon_hist;
+    //delete prefire_jet_hist;
+    //prefire_photon_hist = NULL;
+    //prefire_jet_hist = NULL;
+    //
+    //// W kfactor hist
+    //delete W_kfactor_hist;
+    //W_kfactor_hist = NULL;
+    //
+    //// runOnData?
+    //runOnData = false;
+
+    //// runDataDriven
+    //runDataDriven = false;
+    //
+    //// calcDataDriven
+    //calcDataDriven = false;
+
+    //// which era?
+    //era = 2018;
+    //
+    //use_EEMET = false;
+    //
+    //// this checks systematics later
+    //run_type = "";
+    //
+    //// lets start with systematics and scale factors
+    //
+    //// tau energy scale    
+    //delete tau_dm_scale;
+    //delete tau_vsjet_SF;
+    //delete tau_vsmu_SF;
+    //delete tau_vse_SF;
+    //tau_dm_scale = NULL;
+    //tau_vsjet_SF = NULL;
+    //tau_vsmu_SF = NULL;
+    //tau_vse_SF = NULL;
+    //// ele id scale factor
+    //delete ele_SF;
+    //ele_SF = NULL;
+
+    //// muon id scale factor
+    //delete muon_SF;
+    //muon_SF = NULL;
+    //
+    //// pdf setup
+    //pdf_set_name = "";
+    //pdf_nweights = 0;
+    //pdf_setid = 0;
+    //pdf_is_initialized = false;
+    //init_pdf_sets.clear();
+// trigger string
+    trigger = "";
+
+    // primary vertex cuts
     pv_z = 24;
     pv_d = 2;
     pv_ndof = 4;
-	
-	// minimum tau pt
+
+    // minimum tau pt
     tau_pt = 80;
-    
+
     // maximum tau eta
     tau_eta = 2.3;
-    
-	// minimum muon pt
+
+    // minimum muon pt
     muon_pt = 20;
-    
+
     // maximum muon eta
     muon_eta = 2.4;
-    
-	// minimum ele pt
+
+    // minimum ele pt
     ele_pt = 20;
-    
+
     // maximum ele eta
     ele_eta = 2.5;
-    
+
     // working points of tau identification
     tau_dm = "Tau_idDecayModeNewDMs";
     tau_iso = "Tau_idMVAnewDM2017v2";
     tau_antiEle = "Tau_idAntiEle";
-	tau_antiMuon = "Tau_idAntiMu";
+    tau_antiMuon = "Tau_idAntiMu";
     tau_iso_WP = 1;
     tau_antiMu_WP = 1;
     tau_antiE_WP = 1;
-    
-    // muon id 
-    muon_id = "HighPtID";
-    muon_id_WP = 2;
 
     // minimum missing transverse momentum
     met_pt = 150;
-    
+
     // gen particle cut procedure
     gen_pdgID.clear();
+    gen_motherpdgID = 0;
     cut_type = "";
     cut_value_min = 0;
     cut_value_max = 999999;
-    
+
     // pileup hist
     delete pileup_hist;
     delete pileup_hist_up;
@@ -326,29 +527,45 @@ void config::clean_memory() {
     pileup_hist = NULL;
     pileup_hist_up = NULL;
     pileup_hist_down = NULL;
-    
+
+    // trigger histograms
+    delete trigger_hist;
+    trigger_hist = NULL;
+    delete trigger_hist_up;
+    trigger_hist_up = NULL;
+    delete trigger_hist_down;
+    trigger_hist_down = NULL;
+    // fakerate histogram
+    delete ff_hist;
+    ff_hist = NULL;
     // Prefire histograms
     delete prefire_photon_hist;
     delete prefire_jet_hist;
     prefire_photon_hist = NULL;
     prefire_jet_hist = NULL;
-    
-    // W kfactor hist
-    delete W_kfactor_hist;
-    W_kfactor_hist = NULL;
-    
+
+    // TT?
+    TT = false;
+    DY = false;
+    WW = false;
     // runOnData?
     runOnData = false;
+    runOnSignal = false;
     
+    //ww uncertainty switch
+    wwuncertainty = false;
+
     // which era?
     era = 2018;
-    
+    use_EEMET = false;
+
     // this checks systematics later
-    run_type = "";
+    metfilters = "";
     
+
     // lets start with systematics and scale factors
-    
-    // tau energy scale    
+
+    // tau energy scale
     delete tau_dm_scale;
     delete tau_vsjet_SF;
     delete tau_vsmu_SF;
@@ -357,20 +574,19 @@ void config::clean_memory() {
     tau_vsjet_SF = NULL;
     tau_vsmu_SF = NULL;
     tau_vse_SF = NULL;
-    // ele id scale factor
-    delete ele_SF;
-    ele_SF = NULL;
 
-    // muon id scale factor
+    delete ele_SF;
     delete muon_SF;
+    ele_SF = NULL;
     muon_SF = NULL;
-    
+
     // pdf setup
     pdf_set_name = "";
     pdf_nweights = 0;
     pdf_setid = 0;
     pdf_is_initialized = false;
     init_pdf_sets.clear();
+
 }
     
 

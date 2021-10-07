@@ -196,6 +196,7 @@ rvec<float> scale_correct_muon(
                 pt_corr.push_back(pt[i]);
             }
           }
+
           delete GE;
           return pt_corr;
 }
@@ -313,6 +314,24 @@ float selected_part_col_idx_tau(const rvec<float>& quantity,
 								const rvec<bool>& mask,
                             const rvec<int>& col_idx) {
 	return quantity[mask][col_idx[0]];
+};
+float selected_part_col_idx_tau_barrel(const rvec<float>& quantity, 
+								const rvec<bool>& mask,
+                            const rvec<int>& col_idx,
+                            const rvec<float>& eta) {
+    if(abs(eta[mask][col_idx[0]]) < 1.46){
+	    return quantity[mask][col_idx[0]];
+    }
+    return 0.;
+};
+float selected_part_col_idx_tau_endcap(const rvec<float>& quantity, 
+								const rvec<bool>& mask,
+                            const rvec<int>& col_idx,
+                            const rvec<float>& eta) {
+    if(abs(eta[mask][col_idx[0]]) > 1.56){
+	    return quantity[mask][col_idx[0]];
+    }
+    return 0.;
 };
 bool selected_part_col_idx_muon_bool(const rvec<bool>& quantity, 
 								const rvec<bool>& mask,
@@ -494,6 +513,8 @@ void create_datadriven_hists(	RNode df,
     //    
     //}
 	auto tau_pt_ov_jet_pt_2d = df.Histo2D(	{((TString) "Tau_pt_vs_Tau_pt_over_Jet_pt" + stringcopy), "", 	600u, 0, 3000, 30u, 0,3.}, 	"sel_Tau_pt",	"Tau_pt_over_Jet_pt", 				weight_column);
+	auto tau_pt_ov_jet_pt_2d_barrel = df.Histo2D(	{((TString) "Tau_pt_vs_Tau_pt_over_Jet_pt_barrel" + stringcopy), "", 	600u, 0, 3000, 30u, 0,3.}, 	"sel_Tau_pt_barrel",	"Tau_pt_over_Jet_pt_barrel", 				weight_column);
+	auto tau_pt_ov_jet_pt_2d_endcap = df.Histo2D(	{((TString) "Tau_pt_vs_Tau_pt_over_Jet_pt_endcap" + stringcopy), "", 	600u, 0, 3000, 30u, 0,3.}, 	"sel_Tau_pt_endcap",	"Tau_pt_over_Jet_pt_endcap", 				weight_column);
 	auto tau_pt_ov_jet_pt = df.Histo1D(	{((TString) "Tau_pt_over_Jet_pt" + stringcopy), "", 					6000u, 0, 1}, 		"Tau_pt_over_Jet_pt", 				weight_column);
 	auto tau_pt = df.Histo1D(	{((TString) "Tau_pt" + stringcopy), "", 					6000u, 0, 6000}, 		"sel_Tau_pt", 				weight_column);
 	auto tau_eta = df.Histo1D(	{((TString) "Tau_eta" + stringcopy), "", 					100u, -5, 5}, 			"sel_Tau_eta", 				weight_column);
@@ -505,12 +526,13 @@ void create_datadriven_hists(	RNode df,
 	auto met_phi = df.Histo1D(	{((TString) "MET_phi" + stringcopy), "", 					100u, -3.2, 3.2}, met_branch_name + "_phi", 					weight_column);
 	auto MT = df.Histo1D(		{((TString) "MT" + stringcopy), "", 						6000u, 0, 6000},		"MT", 						weight_column);
 	auto coll_mass = df.Histo1D({((TString) "CollMass" + stringcopy), "",					6000u, 0, 6000},		"CollMass",					weight_column);
-	auto coll_mass_alt = df.Histo1D({((TString) "CollMass_alt" + stringcopy), "",					6000u, 0, 6000},		"CollMass_alt",					weight_column);
 	auto nvtx = df.Histo1D(		{((TString) "nvtx" + stringcopy), "", 					80u, 0, 80}, 			"PV_npvs", 					weight_column);
 	auto njets = df.Histo1D(		{((TString) "nJets" + stringcopy), "", 					40u, 0, 40}, 			"nJet", 					weight_column);
 	auto nvtxgood = df.Histo1D(	{((TString) "nvtx_good" + stringcopy), "", 				80u, 0, 80}, 			"PV_npvsGood", 				weight_column);
 	//hist_dict.emplace(name, tau_genpartflav);
 	hist_dict.emplace(name, tau_pt_ov_jet_pt_2d);
+	hist_dict.emplace(name, tau_pt_ov_jet_pt_2d_barrel);
+	hist_dict.emplace(name, tau_pt_ov_jet_pt_2d_endcap);
 	hist_dict.emplace(name, tau_pt_ov_jet_pt);
 	hist_dict.emplace(name, njets);
 	hist_dict.emplace(name, tau_pt);
@@ -523,7 +545,6 @@ void create_datadriven_hists(	RNode df,
 	hist_dict.emplace(name, met_phi);
 	hist_dict.emplace(name, MT);
 	hist_dict.emplace(name, coll_mass);
-	hist_dict.emplace(name, coll_mass_alt);
 	hist_dict.emplace(name, nvtx);
 	hist_dict.emplace(name, nvtxgood);
 };
@@ -548,11 +569,11 @@ void create_fr_hists(	RNode df,
 	auto met_phi = df.Histo1D(	{((TString) "MET_phi" + stringcopy), "", 					100u, -3.2, 3.2}, met_branch_name + "_phi", 					weight_column);
 	auto MT = df.Histo1D(		{((TString) "MT" + stringcopy), "", 						6000u, 0, 6000},		"MT", 						weight_column);
 	auto coll_mass = df.Histo1D({((TString) "CollMass" + stringcopy), "",					6000u, 0, 6000},		"CollMass",					weight_column);
-	auto coll_mass_alt = df.Histo1D({((TString) "CollMass_alt" + stringcopy), "",					6000u, 0, 6000},		"CollMass_alt",					weight_column);
-	auto coll_mass_alt_2 = df.Histo1D({((TString) "CollMass_alt_2" + stringcopy), "",					6000u, 0, 6000},		"CollMass_alt_2",					weight_column);
 	auto nvtx = df.Histo1D(		{((TString) "nvtx" + stringcopy), "", 					80u, 0, 80}, 			"PV_npvs", 					weight_column);
 	auto njets = df.Histo1D(		{((TString) "nJets" + stringcopy), "", 					40u, 0, 40}, 			"nJet", 					weight_column);
 	auto nvtxgood = df.Histo1D(	{((TString) "nvtx_good" + stringcopy), "", 				80u, 0, 80}, 			"PV_npvsGood", 				weight_column);
+	auto sphericity = df.Histo1D(	{((TString) "Sphericity" + stringcopy), "", 					100u, 0, 1.}, 		"Sphericity", 				weight_column);
+	auto sphericity_leptons = df.Histo1D(	{((TString) "Sphericity_leptons" + stringcopy), "", 					100u, 0, 1.}, 		"Sphericity_leptons", 				weight_column);
 	//hist_dict.emplace(name, tau_genpartflav);
 	hist_dict.emplace(name, tau_pt_ov_jet_pt);
 	hist_dict.emplace(name, njets);
@@ -566,10 +587,10 @@ void create_fr_hists(	RNode df,
 	hist_dict.emplace(name, met_phi);
 	hist_dict.emplace(name, MT);
 	hist_dict.emplace(name, coll_mass);
-	hist_dict.emplace(name, coll_mass_alt);
-	hist_dict.emplace(name, coll_mass_alt_2);
 	hist_dict.emplace(name, nvtx);
 	hist_dict.emplace(name, nvtxgood);
+	hist_dict.emplace(name, sphericity);
+	hist_dict.emplace(name, sphericity_leptons);
 };
 void create_reso_hist( RNode df,
                        std::string name,
@@ -809,6 +830,8 @@ RNode calc_datadriven(RNode df,
 	//
 	//// Now that we have our real tau, write it to special columns to handle it more easily
         auto defquants = df_col_idx.Define("sel_Tau_pt", selected_part_col_idx_tau, {"Tau_pt" + tau_shift, "NonIso_Tau", "col_idx"})
+                                   .Define("sel_Tau_pt_barrel", selected_part_col_idx_tau_barrel, {"Tau_pt" + tau_shift, "NonIso_Tau", "col_idx","Tau_eta" + tau_shift})
+                                   .Define("sel_Tau_pt_endcap", selected_part_col_idx_tau_endcap, {"Tau_pt" + tau_shift, "NonIso_Tau", "col_idx","Tau_eta" + tau_shift})
                                    .Define("sel_Tau_eta", selected_part_col_idx_tau, {"Tau_eta" + tau_shift, "NonIso_Tau", "col_idx"})
                                    .Define("sel_Tau_phi", selected_part_col_idx_tau, {"Tau_phi" + tau_shift, "NonIso_Tau", "col_idx"})
                                    .Define("sel_Tau_mass", selected_part_col_idx_tau, {"Tau_mass" + tau_shift, "NonIso_Tau", "col_idx"})
@@ -840,7 +863,7 @@ RNode calc_datadriven(RNode df,
         //return tau_pt/jet_pt[jetidx];                                             
 //    },
   //                  {"sel_Tau_pt","sel_Tau_jetIdx","Jet_pt"});
-    auto df_coll = mtcalc.Define("CollMass", collinear_mass, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("CollMass_alt", collinear_mass_alt, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("Tau_pt_over_Jet_pt", tau_pt_over_jet_pt,{"col_idx","Tau_pt" + tau_shift,"Tau_jetIdx","Jet_pt","NonIso_Tau"});
+    auto df_coll = mtcalc.Define("CollMass", collinear_mass, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("CollMass_alt", collinear_mass_alt, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("Tau_pt_over_Jet_pt", tau_pt_over_jet_pt,{"col_idx","Tau_pt" + tau_shift,"Tau_jetIdx","Jet_pt","NonIso_Tau"}).Define("Tau_pt_over_Jet_pt_barrel", tau_pt_over_jet_pt_barrel,{"col_idx","Tau_pt" + tau_shift, "Tau_jetIdx", "Jet_pt", "NonIso_Tau", "Tau_eta" + tau_shift}).Define("Tau_pt_over_Jet_pt_endcap", tau_pt_over_jet_pt_endcap,{"col_idx", "Tau_pt" + tau_shift, "Tau_jetIdx", "Jet_pt", "NonIso_Tau", "Tau_eta" + tau_shift});
     RNode total_weights = df_coll;
     std::vector < std::string > list_of_weights;
 
@@ -1063,6 +1086,8 @@ RNode calc_datadriven(RNode df,
         }
     auto df_col_idx_iso = evntselect_iso_tau.Define("col_idx", col_idx, {"Tau_pt" + tau_shift, "Muon_pt_corr" + muon_shift, "Tau_eta" + tau_shift, "Muon_eta", "Tau_phi" + tau_shift, "Muon_phi", "Tau_mass" + tau_shift, "Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift , "Iso_Tau", "Muon_mask"});   
         auto defquants_iso = df_col_idx_iso.Define("sel_Tau_pt", selected_part_col_idx_tau, {"Tau_pt" + tau_shift, "Iso_Tau", "col_idx"})
+                                   .Define("sel_Tau_pt_barrel", selected_part_col_idx_tau_barrel, {"Tau_pt" + tau_shift, "Iso_Tau", "col_idx","Tau_eta" + tau_shift})
+                                   .Define("sel_Tau_pt_endcap", selected_part_col_idx_tau_endcap, {"Tau_pt" + tau_shift, "Iso_Tau", "col_idx","Tau_eta" + tau_shift})
                                    .Define("sel_Tau_eta", selected_part_col_idx_tau, {"Tau_eta" + tau_shift, "Iso_Tau", "col_idx"})
                                    .Define("sel_Tau_phi", selected_part_col_idx_tau, {"Tau_phi" + tau_shift, "Iso_Tau", "col_idx"})
                                    .Define("sel_Tau_mass", selected_part_col_idx_tau, {"Tau_mass" + tau_shift, "Iso_Tau", "col_idx"})
@@ -1084,7 +1109,7 @@ RNode calc_datadriven(RNode df,
 //        return tau_pt/jet_pt[jetidx];                                             
   //  },
     //                {"sel_Tau_pt","sel_Tau_jetIdx","Jet_pt"});
-    auto df_coll_iso = mtcalc_iso.Define("CollMass", collinear_mass, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("CollMass_alt", collinear_mass_alt, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("Tau_pt_over_Jet_pt", tau_pt_over_jet_pt,{"col_idx","Tau_pt" + tau_shift,"Tau_jetIdx","Jet_pt","Iso_Tau"});  
+    auto df_coll_iso = mtcalc_iso.Define("CollMass", collinear_mass, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("CollMass_alt", collinear_mass_alt, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("Tau_pt_over_Jet_pt", tau_pt_over_jet_pt,{"col_idx","Tau_pt" + tau_shift,"Tau_jetIdx","Jet_pt","Iso_Tau"}).Define("Tau_pt_over_Jet_pt_endcap", tau_pt_over_jet_pt_endcap,{"col_idx","Tau_pt" + tau_shift, "Tau_jetIdx", "Jet_pt", "Iso_Tau", "Tau_eta" + tau_shift}).Define("Tau_pt_over_Jet_pt_barrel", tau_pt_over_jet_pt_barrel,{"col_idx","Tau_pt" + tau_shift, "Tau_jetIdx", "Jet_pt", "Iso_Tau", "Tau_eta" + tau_shift});  
 	RNode total_weights_iso = df_coll_iso;
     std::vector < std::string > list_of_weights_iso;
 
@@ -1398,6 +1423,8 @@ RNode apply_datadriven(RNode df, std::string muon_shift, std::string tau_shift, 
 //	
     auto df_col_idx_noniso = evntselect_noniso_tau.Define("col_idx", col_idx, {"Tau_pt" + tau_shift, "Muon_pt_corr" + muon_shift, "Tau_eta" + tau_shift, "Muon_eta", "Tau_phi" + tau_shift, "Muon_phi", "Tau_mass" + tau_shift, "Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift , "NonIso_Tau", "Muon_mask"});   
         auto defquants_noniso = df_col_idx_noniso.Define("sel_Tau_pt", selected_part_col_idx_tau, {"Tau_pt" + tau_shift, "NonIso_Tau", "col_idx"})
+                                   .Define("sel_Tau_pt_barrel", selected_part_col_idx_tau_barrel, {"Tau_pt" + tau_shift, "NonIso_Tau", "col_idx", "Tau_eta" + tau_shift})
+                                   .Define("sel_Tau_pt_endcap", selected_part_col_idx_tau_endcap, {"Tau_pt" + tau_shift, "NonIso_Tau", "col_idx", "Tau_eta" + tau_shift})
                                    .Define("sel_Tau_eta", selected_part_col_idx_tau, {"Tau_eta" + tau_shift, "NonIso_Tau", "col_idx"})
                                    .Define("sel_Tau_phi", selected_part_col_idx_tau, {"Tau_phi" + tau_shift, "NonIso_Tau", "col_idx"})
                                    .Define("sel_Tau_mass", selected_part_col_idx_tau, {"Tau_mass" + tau_shift, "NonIso_Tau", "col_idx"})
@@ -1414,7 +1441,7 @@ RNode apply_datadriven(RNode df, std::string muon_shift, std::string tau_shift, 
     auto dimuon_cut_noniso = defquants_noniso.Filter(dimuonpair_cut,{"Muon_pt_corr" + muon_shift,"Muon_eta","Muon_phi", "DiMuon_mask"},"Di Muon Pair Cut");
     auto delR_cut_noniso = dimuon_cut_noniso.Filter(mutaudelR_cut,{"sel_Muon_eta","sel_Muon_phi", "sel_Tau_eta", "sel_Tau_phi"},"Mu Tau Del R Cut");
 	auto mtcalc_noniso = delR_cut_noniso.Define("MT", mass_transv, {"sel_Muon_pt", "sel_Muon_phi", "MET_pt", "MET_phi"});//.Define("sel_Tau_pt_ov_Jet_pt_Iso", [](const rvec<float> tau_pt, 
-    auto df_coll_noniso = mtcalc_noniso.Define("CollMass", collinear_mass, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("CollMass_alt", collinear_mass_alt, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("Tau_pt_over_Jet_pt", tau_pt_over_jet_pt,{"col_idx","Tau_pt" + tau_shift,"Tau_jetIdx","Jet_pt","NonIso_Tau"});  
+    auto df_coll_noniso = mtcalc_noniso.Define("CollMass", collinear_mass, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("CollMass_alt", collinear_mass_alt, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("Tau_pt_over_Jet_pt", tau_pt_over_jet_pt,{"col_idx","Tau_pt" + tau_shift,"Tau_jetIdx","Jet_pt","NonIso_Tau"}).Define("Tau_pt_over_Jet_pt_barrel", tau_pt_over_jet_pt_barrel,{"col_idx","Tau_pt" + tau_shift, "Tau_jetIdx","Jet_pt","NonIso_Tau","Tau_eta" + tau_shift}).Define("Tau_pt_over_Jet_pt_endcap", tau_pt_over_jet_pt_endcap,{"col_idx","Tau_pt" + tau_shift, "Tau_jetIdx", "Jet_pt", "NonIso_Tau", "Tau_eta" + tau_shift});  
 	RNode total_weights_noniso = df_coll_noniso;
     std::vector < std::string > list_of_weights_noniso;
     if (config::runOnData) {
@@ -1489,8 +1516,8 @@ RNode apply_datadriven(RNode df, std::string muon_shift, std::string tau_shift, 
                                                         }, {"Muon_pt_corr", "Muon_eta", "Muon_mask"});
         define_weight(total_weights_noniso, default_weights_noniso, list_of_weights_noniso);
         }
-	auto df_mt_noniso = total_weights_noniso.Filter("MT < 120.", "mt_cut");
-	auto df_mt_signal_noniso = total_weights_noniso.Filter("MT > 120.", "mt_cut");
+	auto df_mt_noniso = total_weights_noniso.Filter("MT < 120.", "mt_cut").Define("Sphericity",sphericity_full,{"Tau_pt","Tau_eta","Tau_phi","Tau_mass","Muon_pt","Muon_eta","Muon_phi","Muon_mass","Jet_pt","Jet_eta", "Jet_phi", "Jet_mass","NonIso_Tau", "Muon_mask"}).Define("Sphericity_leptons",sphericity_leptons,{"Tau_pt","Tau_eta","Tau_phi","Tau_mass","Muon_pt","Muon_eta","Muon_phi","Muon_mass","NonIso_Tau", "Muon_mask"});
+	auto df_mt_signal_noniso = total_weights_noniso.Filter("MT > 120.", "mt_cut").Define("Sphericity",sphericity_full,{"Tau_pt","Tau_eta","Tau_phi","Tau_mass","Muon_pt","Muon_eta","Muon_phi","Muon_mass","Jet_pt","Jet_eta", "Jet_phi", "Jet_mass","Iso_Tau", "Muon_mask"}).Define("Sphericity_leptons",sphericity_leptons,{"Tau_pt","Tau_eta","Tau_phi","Tau_mass","Muon_pt","Muon_eta","Muon_phi","Muon_mass","Iso_Tau", "Muon_mask"});
     if (config::runOnData){
         create_datadriven_hists(df_mt_signal_noniso, "Fakes_SignalRegion", muon_shift, tau_shift, met_shift, "total_weight");
     }
@@ -1697,6 +1724,8 @@ RNode run_analyser(  RNode df,
         auto df_col_idx = evntselect.Define("col_idx", col_idx, {"Tau_pt" + tau_shift, "Muon_pt_corr" + muon_shift, "Tau_eta" + tau_shift, "Muon_eta", "Tau_phi" + tau_shift, "Muon_phi", "Tau_mass" + tau_shift, "Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift , "Tau_mask", "Muon_mask"});   
         // Now that we have our real tau, write it to special columns to handle it more easily
         auto defquants = df_col_idx.Define("sel_Tau_pt", selected_part_col_idx_tau, {"Tau_pt" + tau_shift, "Tau_mask", "col_idx"})
+                                   .Define("sel_Tau_pt_barrel", selected_part_col_idx_tau_barrel, {"Tau_pt" + tau_shift, "Tau_mask", "col_idx", "Tau_eta" + tau_shift})
+                                   .Define("sel_Tau_pt_endcap", selected_part_col_idx_tau_endcap, {"Tau_pt" + tau_shift, "Tau_mask", "col_idx", "Tau_eta" + tau_shift})
                                    .Define("sel_Tau_eta", selected_part_col_idx_tau, {"Tau_eta" + tau_shift, "Tau_mask", "col_idx"})
                                    .Define("sel_Tau_phi", selected_part_col_idx_tau, {"Tau_phi" + tau_shift, "Tau_mask", "col_idx"})
                                    .Define("sel_Tau_mass", selected_part_col_idx_tau, {"Tau_mass" + tau_shift, "Tau_mask", "col_idx"})
@@ -1746,7 +1775,8 @@ RNode run_analyser(  RNode df,
                     "WWshape",
                     "TopQ",
                     "TopPDF",
-                    "top_pt_weight"
+                    "top_pt_weight",
+                    "MuonReco"
                 };
 
 
@@ -1876,7 +1906,31 @@ RNode run_analyser(  RNode df,
                                                                      const rvec<bool>& mask
                                                                      ) { 
                                                                          return trigger_sf(pt, eta, mask, "Down");
-                                                                    }, {"Muon_pt_corr", "Muon_eta", "Muon_mask"});
+                                                                    }, {"Muon_pt_corr", "Muon_eta", "Muon_mask"})
+                                    .Define("MuonReco", [](const rvec<float>& pt,
+                                                                     const rvec<float>& eta,
+                                                                     const rvec<float>& phi,
+                                                                     const rvec<float>& mass,
+                                                                     const rvec<bool>& mask
+                                                                     ) { 
+                                                                         return muon_reco_eff(pt, eta, phi, mass,mask,"");
+                                                                    }, {"Muon_pt_corr", "Muon_eta", "Muon_phi", "Muon_mass", "Muon_mask"})
+                                    .Define("MuonRecoUp", [](const rvec<float>& pt,
+                                                                     const rvec<float>& eta,
+                                                                     const rvec<float>& phi,
+                                                                     const rvec<float>& mass,
+                                                                     const rvec<bool>& mask
+                                                                     ) { 
+                                                                         return muon_reco_eff(pt, eta, phi, mass,mask,"Up");
+                                                                    }, {"Muon_pt_corr", "Muon_eta", "Muon_phi", "Muon_mass", "Muon_mask"})
+                                    .Define("MuonRecoDown", [](const rvec<float>& pt,
+                                                                     const rvec<float>& eta,
+                                                                     const rvec<float>& phi,
+                                                                     const rvec<float>& mass,
+                                                                     const rvec<bool>& mask
+                                                                     ) { 
+                                                                         return muon_reco_eff(pt, eta, phi, mass,mask,"Down");
+                                                                    }, {"Muon_pt_corr", "Muon_eta", "Muon_phi", "Muon_mass", "Muon_mask"});
             define_weight(total_weights, default_weights, list_of_weights);
 
             if (default_run) {
@@ -1931,6 +1985,8 @@ RNode run_analyser(  RNode df,
                     define_weight(total_weights, default_weights, list_of_weights, "TopQDown", "TopQ");
                     define_weight(total_weights, default_weights, list_of_weights, "TopPDFUp", "TopPDF");
                     define_weight(total_weights, default_weights, list_of_weights, "TopPDFDown", "TopPDF");
+                    define_weight(total_weights, default_weights, list_of_weights, "MuonRecoUp", "MuonReco");
+                    define_weight(total_weights, default_weights, list_of_weights, "MuonRecoDown", "MuonReco");
 
                     define_weight(total_weights, default_weights, list_of_weights, "TauJetFakeScaleFactorUp__", "TauJetFakeScaleFactor__");
                     define_weight(total_weights, default_weights, list_of_weights, "TauJetFakeScaleFactorDown__", "TauJetFakeScaleFactor__");
@@ -1997,7 +2053,7 @@ RNode run_analyser(  RNode df,
         // actual analysis cut  -- MT > 120. GeV 
         //auto df_mt = df_coll_alt.Filter("MT > 120.", "mt_cut");
         auto df_mt = total_weights.Filter("MT > 120.", "mt_cut").Define("Sphericity",sphericity_full,{"Tau_pt","Tau_eta","Tau_phi","Tau_mass","Muon_pt","Muon_eta","Muon_phi","Muon_mass","Jet_pt","Jet_eta", "Jet_phi", "Jet_mass","Tau_mask", "Muon_mask"}).Define("Sphericity_leptons",sphericity_leptons,{"Tau_pt","Tau_eta","Tau_phi","Tau_mass","Muon_pt","Muon_eta","Muon_phi","Muon_mass","Tau_mask", "Muon_mask"});
-        //auto df_met = df_mt.Filter("MET_pt > 100.", "met_cut");
+        auto df_dip = df_mt.Filter("CollMass > 800. && CollMass < 1000.", "dip");
 
         auto df_delphi_taumet = df_mt.Define("DeltaPhi_tau_met", delta_phi, {"sel_Tau_phi", met_branch_name + "_phi"});  
         //auto df_njets = df_mt.Filter("nJet > 9");  
@@ -2018,7 +2074,7 @@ RNode run_analyser(  RNode df,
             //create_hists(df_mt, "Stage0", muon_shift, tau_shift, met_shift, "total_weight");
          } 
         fill_stage_with_syst(df_mt, "Stage1", muon_shift, tau_shift, met_shift, list_of_weights);
-        fill_stage_with_syst( df_delphi_cut_test, "Stage2",muon_shift, tau_shift, met_shift, list_of_weights);
+        fill_stage_with_syst( df_delphi_cut, "Stage2",muon_shift, tau_shift, met_shift, list_of_weights);
         return df_delphi_cut;
         }
    }();
@@ -2114,22 +2170,22 @@ void analyse(   RNode df,
                     return true;
                 }, {"LHEPdfWeight", "GenVisTau_pt", "GenVisTau_eta", "GenPart_pt", "GenPart_eta", "GenPart_pdgId"});
         }
-   // if (config::era == 2018) {
-   //     fixed = good_primary_vertex.Filter([](   const rvec<float>& jet_pt,
-   //                                     const rvec<float>& jet_eta,
-   //                                     const rvec<float>& jet_phi){
-   //                                         for (uint i = 0; i < jet_pt.size(); i++) {
-   //                                             if (jet_pt[i] < 30)
-   //                                                 continue;
-   //                                             if ( jet_eta[i] < -3.0 || jet_eta[i] > -1.3 )
-   //                                                 continue;
-   //                                             if ( jet_phi[i] < -1.57 || jet_phi[i] > -0.87 )
-   //                                                 continue;
-   //                                             return false;
-   //                                         }
-   //                                         return true;
-   //                                     }, {"Jet_pt_nom", "Jet_eta", "Jet_phi"}, "2018 HEM problem");
-   // }
+    if (config::era == 2018) {
+        fixed = good_primary_vertex.Filter([](   const rvec<float>& jet_pt,
+                                        const rvec<float>& jet_eta,
+                                        const rvec<float>& jet_phi){
+                                            for (uint i = 0; i < jet_pt.size(); i++) {
+                                                if (jet_pt[i] < 30)
+                                                    continue;
+                                                if ( jet_eta[i] < -3.0 || jet_eta[i] > -1.3 )
+                                                    continue;
+                                                if ( jet_phi[i] < -1.57 || jet_phi[i] > -0.87 )
+                                                    continue;
+                                                return false;
+                                            }
+                                            return true;
+                                        }, {"Jet_pt_nom", "Jet_eta", "Jet_phi"}, "2018 HEM problem");
+    }
     
     
     // Signal Study
@@ -2387,7 +2443,7 @@ int main (int argc, char* argv[]) {
         }
         if (!config::runOnData){
             if (std::find(colNames.begin(), colNames.end(), "LHE_HT") == colNames.end()){
-                df = df.Define("LHE_HT", [](){return (float)0.0;});
+                df = df.Define("LHE_HT", [](){return (float)0.0;}).Define("LHEPart_pt", [](){return (float)0.0;}).Define("LHEPart_eta", [](){return (float)0.0;}).Define("LHEPart_phi", [](){return (float)0.0;}).Define("LHEPart_mass", [](){return (float)0.0;}).Define("LHEPart_status", [](){return (float)0.0;}).Define("LHEPart_pdgId", [](){return (float)0.0;});
             }
         }
         auto loopcounter = df.Filter([](ULong64_t e){if (0ULL == e) std::cout << "Running evtloop" << std::endl; return true;},{"rdfentry_"});
@@ -2477,7 +2533,10 @@ int main (int argc, char* argv[]) {
             }
 					
 			// clean gen files
-			auto gencleaned = definecounts.Filter(clean_gen_file, {"LHE_HT", "LHEPart_pt", "LHEPart_eta", "LHEPart_phi", "LHEPart_mass", "LHEPart_pdgId", "LHEPart_status"}, "gen cleaning");
+            RNode gencleaned = definecounts;
+            if(config::cut_type != ""){
+                gencleaned = definecounts.Filter(clean_gen_file, {"LHE_HT", "LHEPart_pt", "LHEPart_eta", "LHEPart_phi", "LHEPart_mass", "LHEPart_pdgId", "LHEPart_status"}, "gen cleaning");
+            }
             //auto lepton_pair_idx = gencleaned.Define("lepton_pair_idx",lepton_pair_idx, {"GenPart_pdgId","GenPart_genPartIdxMother"});
             //auto lepton_pair_mass = lepton_pair_idx.Define("lepton_pair_invmass", mass_inv_idx, {"GenPart_pt", "GenPart_eta","GenPart_phi","GenPart_mass","top_pair_idx"});
 

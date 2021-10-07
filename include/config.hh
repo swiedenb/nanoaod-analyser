@@ -14,6 +14,7 @@ using json = nlohmann::json;
 
 namespace config {
 	extern std::string trigger;
+	extern std::string metfilters;
 	
 	extern float pv_z;
 	extern float pv_d;
@@ -28,6 +29,9 @@ namespace config {
     extern uint tau_iso_WP;
     extern uint tau_antiE_WP;
     extern uint tau_antiMu_WP;
+    extern uint tau_iso_WP_datadriven;
+    extern uint tau_antiE_WP_datadriven;
+    extern uint tau_antiMu_WP_datadriven;
 
     extern std::string muon_id;
     extern std::string muon_iso;
@@ -41,16 +45,32 @@ namespace config {
 	extern float met_pt;
     
     extern std::vector<int> gen_pdgID;
+    extern int gen_motherpdgID;
     extern std::string cut_type;
     extern float cut_value_min;
     extern float cut_value_max;
+    extern bool cut_double;
+    extern bool cut_single;
     
+    extern bool TT;
+    extern bool WW;
+    extern bool DY;
     extern bool runOnData;
+    extern bool runOnSignal;
+    extern bool wwuncertainty;
+    extern bool runDataDriven;
+    extern bool calcDataDriven;
     extern int era;
+
+    extern bool use_EEMET;
     
     extern TH1D* pileup_hist;
     extern TH1D* pileup_hist_up;
     extern TH1D* pileup_hist_down;
+    extern TH2D* trigger_hist;
+    extern TH2D* trigger_hist_up;
+    extern TH2D* trigger_hist_down;
+    extern TH2D* ff_hist;
     extern TH2D* prefire_photon_hist;
     extern TH2D* prefire_jet_hist;
     

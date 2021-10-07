@@ -1,0 +1,5 @@
+{
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/TTTo2L2Nu/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/TTToSemiLeptonic/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/2017/TTToHadronic/" : "cfg/mc_2018.cfg"
+}

@@ -55,20 +55,20 @@ EleSFTool::EleSFTool(const std::string& year, const std::string& id): ID(id){
   file_reco->Close();
   delete file_reco;
   
-  if(std::find(EleIDs.begin(),EleIDs.end(),ID)!=EleIDs.end()){
-      TString filename;
-      std::string histname;
-      filename = Form("%s/sf_ele_%s_%s.root",datapath.data(),ID.data(),year.data());
-      TFile* file = ensureTFileEle(filename,verbose);
-      histname = "SF_MC";
-      hist = extractTH1Ele(file,histname);
-      hist.SetDirectory(0);
-      file->Close();
-      delete file;
-    }else{
-        std::cerr << "Did not recognize ele ID '" << ID << "'!" << std::endl;
-        assert(0);
-    }
+//  if(std::find(EleIDs.begin(),EleIDs.end(),ID)!=EleIDs.end()){
+//      TString filename;
+//      std::string histname;
+//      filename = Form("%s/sf_ele_%s_%s.root",datapath.data(),ID.data(),year.data());
+//      TFile* file = ensureTFileEle(filename,verbose);
+//      histname = "SF_MC";
+//      hist = extractTH1Ele(file,histname);
+//      hist.SetDirectory(0);
+//      file->Close();
+//      delete file;
+//    }else{
+//        std::cerr << "Did not recognize ele ID '" << ID << "'!" << std::endl;
+//        assert(0);
+//    }
 }
 
 float EleSFTool::getSFID(double pt, double eta, const std::string& unc) {

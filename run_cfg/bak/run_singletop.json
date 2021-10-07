@@ -1,0 +1,9 @@
+{
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/ST_s-channel_4f_leptonDecays/" :  "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/ST_t-channel_antitop_5f/" :  "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/NanoAOD/NanoAODv6/2018/ST_t-channel_top_5f/" :  "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/NanoAOD/NanoAODv6/2018/ST_tW_top_5f_NoFullyHadronicDecays/" :  "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/NanoAOD/NanoAODv6/2018/ST_tW_antitop_5f_NoFullyHadronicDecays/" :  "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/ST_tW_top_5f_inclusiveDecays/" : "cfg/mc_2018.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/ST_tW_antitop_5f_inclusiveDecays/" : "cfg/mc_2018.cfg"
+}
