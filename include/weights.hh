@@ -49,7 +49,12 @@ float ele_id_scale_factor( const rvec<float>& ele_pt,
                             const rvec<float>& ele_eta,
                             const rvec<float>& ele_mask,
                             const std::string& run_type);
+float ele_reco_scale_factor( const rvec<float>& ele_pt,
+                            const rvec<float>& ele_eta,
+                            const rvec<float>& ele_mask,
+                            const std::string& run_type);
 float dd_fakerate( const rvec<float>& tau_pt,
+                            const rvec<float>& tau_eta,
                             const float & tau_pt_over_jet_pt,
                             const rvec<int>& col_idx,
                             const rvec<bool>& tau_mask,

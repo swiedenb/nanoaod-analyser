@@ -28,33 +28,31 @@ float trigger_sf(   const rvec<float>& pt,
                                     const std::string& unc ) {
         float weight = 1.0;
         for (uint i = 0; i < pt[mask].size(); i++) {
-            int eta_bin = hist->GetYaxis()->FindBin(abs(eta[mask][i]));
-            int pt_bin = hist->GetXaxis()->FindBin(pt[mask][i]);
-            int lasteta_bin = hist->GetYaxis()->FindBin(500);
-            int lastpt_bin = hist->GetXaxis()->FindBin(999.);
+            int eta_bin = hist->GetXaxis()->FindBin(abs(eta[mask][i]));
+            int pt_bin = hist->GetYaxis()->FindBin(pt[mask][i]);
+            int lasteta_bin = hist->GetXaxis()->FindBin(2.499);
+            int lastpt_bin = hist->GetYaxis()->FindBin(1999.);
             if (std::abs(eta[i]) < 5) {
                 if (unc == "") {
-                        if (pt[mask][i] > 1000.){
-                            weight *= hist->GetBinContent(lastpt_bin, eta_bin);
+                        if (pt[mask][i] > 1999.){
+                            weight *= hist->GetBinContent(eta_bin,lastpt_bin);
                         }
                         else{
-                            weight *= hist->GetBinContent(pt_bin, eta_bin);
+                            weight *= hist->GetBinContent(eta_bin,pt_bin);
                         }
                 } else if (unc == "Up") {
-                        if (pt[mask][i] > 1000.){
-                            weight *= ( hist->GetBinContent(lastpt_bin,eta_bin) + hist_up->GetBinContent(lastpt_bin,eta_bin));
+                        if (pt[mask][i] > 1999.){
+                            weight *= ( hist->GetBinContent(lastpt_bin,eta_bin));
                         }
                         else{
-                            weight *= ( hist->GetBinContent(pt_bin, eta_bin)
-                                        + hist_up->GetBinContent(pt_bin, eta_bin) );
+                            weight *= ( hist->GetBinContent(pt_bin, eta_bin));
                         }
                 } else if (unc == "Down") {
-                        if (pt[mask][i] > 1000.){
-                            weight *=  ( hist->GetBinContent(lastpt_bin, eta_bin) - hist_down->GetBinContent(lastpt_bin, eta_bin));
+                        if (pt[mask][i] > 1999.){
+                            weight *=  ( hist->GetBinContent(lastpt_bin, eta_bin));
                         }
                         else{
-                            weight *= ( hist->GetBinContent(pt_bin, eta_bin)
-                                            - hist_down->GetBinContent(pt_bin, eta_bin) );
+                            weight *= ( hist->GetBinContent(pt_bin, eta_bin));
                         }
                 }
             }
@@ -121,15 +119,49 @@ float prefire_factor(   const rvec<float>& jet_pt,
 
 // get DD fake rate 
 float dd_fakerate( const rvec<float>& tau_pt,
+                            const rvec<float>& tau_eta,
                             const float & tau_pt_over_jet_pt,
                             const rvec<int>& col_idx,
                             const rvec<bool>& tau_mask,
                             const std::string& run_type) {
 
-  Int_t tauptbin = config::ff_hist->GetXaxis()->FindBin(tau_pt[tau_mask][col_idx[0]]);
-  Int_t tauptojetptbin = config::ff_hist->GetYaxis()->FindBin(tau_pt_over_jet_pt);
-  float FF  = config::ff_hist->GetBinContent(tauptbin,tauptojetptbin);
-  return FF;
+  float FF = 0.;
+  float FF_closure = 0.;
+  if( tau_pt[tau_mask][col_idx[0]] < 150.){
+      if( abs(tau_eta[tau_mask][col_idx[0]]) < 1.446){
+          Int_t tauptbin = config::ff_hist_barrel_low->GetXaxis()->FindBin(tau_pt[tau_mask][col_idx[0]]);
+          Int_t tauptojetptbin = config::ff_hist_barrel_low->GetYaxis()->FindBin(tau_pt_over_jet_pt);
+          FF  = config::ff_hist_barrel_low->GetBinContent(tauptbin,tauptojetptbin);
+          FF_closure  = config::ff_closure_hist->GetBinContent(tauptbin,tauptojetptbin);
+      }
+      else{
+          Int_t tauptbin = config::ff_hist_endcap_low->GetXaxis()->FindBin(tau_pt[tau_mask][col_idx[0]]);
+          Int_t tauptojetptbin = config::ff_hist_endcap_low->GetYaxis()->FindBin(tau_pt_over_jet_pt);
+          FF  = config::ff_hist_endcap_low->GetBinContent(tauptbin,tauptojetptbin);
+          FF_closure  = config::ff_closure_hist->GetBinContent(tauptbin,tauptojetptbin);
+      }
+  }
+  else{
+      if( abs(tau_eta[tau_mask][col_idx[0]]) < 1.446){
+          Int_t tauptbin = config::ff_hist_barrel_high->GetXaxis()->FindBin(tau_pt[tau_mask][col_idx[0]]);
+          Int_t tauptojetptbin = config::ff_hist_barrel_high->GetYaxis()->FindBin(tau_pt_over_jet_pt);
+          FF  = config::ff_hist_barrel_high->GetBinContent(tauptbin,tauptojetptbin);
+          FF_closure  = config::ff_closure_hist->GetBinContent(tauptbin,tauptojetptbin);
+      }
+      else{
+          Int_t tauptbin = config::ff_hist_endcap_high->GetXaxis()->FindBin(tau_pt[tau_mask][col_idx[0]]);
+          Int_t tauptojetptbin = config::ff_hist_endcap_high->GetYaxis()->FindBin(tau_pt_over_jet_pt);
+          FF  = config::ff_hist_endcap_high->GetBinContent(tauptbin,tauptojetptbin);
+          FF_closure  = config::ff_closure_hist->GetBinContent(tauptbin,tauptojetptbin);
+      }
+  }
+  if(config::closure){
+      return FF_closure;
+  }
+  else{
+      return FF;
+  }
+  return 0.;
     
 
 }
@@ -143,6 +175,20 @@ float ele_id_scale_factor( const rvec<float>& ele_pt,
     float scale_factor = 1.0;
     for (uint i = 0; i < ele_pt[ele_mask].size(); i++) {
         scale_factor *= config::ele_SF->getSFID(ele_pt[ele_mask][i],ele_eta[ele_mask][i], run_type);
+    }
+    return scale_factor;
+    
+
+}
+// get ele reco scale factor
+float ele_reco_scale_factor( const rvec<float>& ele_pt,
+                            const rvec<float>& ele_eta,
+                            const rvec<float>& ele_mask,
+                            const std::string& run_type) {
+
+    float scale_factor = 1.0;
+    for (uint i = 0; i < ele_pt[ele_mask].size(); i++) {
+        scale_factor *= config::ele_SF->getSFReco(ele_pt[ele_mask][i],ele_eta[ele_mask][i], run_type);
     }
     return scale_factor;
     

@@ -35,7 +35,6 @@ DDTool::DDTool(const std::string& year){
 
 float DDTool::getFF(float taupt, float taupt_o_jetpt, const std::string& year, const std::string& unc) {
   //auto filein = new TFile("/home/home1/institut_3a/wiedenbeck/PhD/analysis/nanoaod-analyser/cfg/fakerate/fakerate_2018.root","READ");
-
   TString datapath                = (TString) getenv("MY_ANALYSIS_PATH") + "/cfg/fakerate/fakerate_" + year + ".root";
   std::cout<<"Reading in FF from: "<<datapath<<std::endl;
   auto filein = new TFile(datapath,"READ");

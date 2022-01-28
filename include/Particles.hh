@@ -13,6 +13,7 @@ using rvec = ROOT::VecOps::RVec<T>;
 using RNode = ROOT::RDF::RNode;
 
 
+std::pair<double,double> METXYCorr_Met_MetPhi(double originalMet, double originalMet_phi, int runnb, int year, bool isData, int npv);
 rvec<bool> tau_acceptance_and_id(	const rvec<float>& pt, 
                                     const rvec<float>& eta, 
                                     const rvec<float>& dz,
@@ -52,13 +53,16 @@ rvec<bool> muon_acceptance_and_id(	const rvec<float>& pt,
 									const rvec<float>& eta, 
 									const rvec<bool>& pfcand, 
 									const rvec<UChar_t>& id, 
-									const rvec<UChar_t>& iso
+									const rvec<float>& iso
 									);
 
 rvec<bool> di_muon_id(const rvec<float>& pt, 
                                   const rvec<float>& eta, 
                                   const rvec<UChar_t>& id, 
                                   const rvec<float>& iso);
+rvec<bool> di_ele_id(const rvec<float>& pt, 
+                                  const rvec<float>& eta, 
+                                  const rvec<int>& id); 
 rvec<bool> ele_acceptance_and_id(	const rvec<float>& pt,
 									const rvec<float>& eta,
 									const rvec<Int_t>& id);

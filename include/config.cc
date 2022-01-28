@@ -83,6 +83,13 @@ namespace config {
     TH2D* trigger_hist_down = NULL;
     // fakerate histograms
     TH2D* ff_hist = NULL;
+    TH2D* ff_hist_low = NULL;
+    TH2D* ff_hist_high = NULL;
+    TH2D* ff_hist_barrel_low = NULL;
+    TH2D* ff_hist_barrel_high = NULL;
+    TH2D* ff_hist_endcap_low = NULL;
+    TH2D* ff_hist_endcap_high = NULL;
+    TH2D* ff_closure_hist = NULL;
     // Prefire histograms
     TH2D* prefire_photon_hist = NULL;
     TH2D* prefire_jet_hist = NULL;
@@ -94,6 +101,9 @@ namespace config {
     // W kfactor hist
     TH1D* W_kfactor_hist = NULL;
 
+    //do xy
+    bool doXY = false;
+
     // TT?
     bool TT = false;
     bool DY = false;
@@ -103,11 +113,18 @@ namespace config {
     // signal?
     bool runOnSignal = false;
     
+    //do Snapshot
+    bool doSnapshot = false;
     // runDataDriven
     bool runDataDriven = false;
 
+    bool use2017XY = false;
+
     // calcDataDriven
     bool calcDataDriven = false;
+
+    // closure
+    bool closure = false;
 
     // which era?
     int era = 2018;
@@ -129,8 +146,11 @@ namespace config {
     // muon scale factor
     MuonSFTool* muon_SF; 
 
+    // electron uncertainty tool
+    EnergyScaleCorrection *eleCorr;
     // pdf setup
     std::string pdf_set_name = "";
+    std::string pdf_prod_set_name = "";
     int pdf_nweights = 0;
     int pdf_setid = 0;
     bool pdf_is_initialized = false;
@@ -198,6 +218,8 @@ bool config::load_config_file(json cfg)
     if (globalcfg.find("muon_iso") != globalcfg.end())          muon_iso = globalcfg["muon_iso"];
     if (globalcfg.find("muon_id_WP") != globalcfg.end())        muon_id_WP = globalcfg["muon_id_WP"];
     if (globalcfg.find("muon_iso_WP") != globalcfg.end())       muon_iso_WP = globalcfg["muon_iso_WP"];
+    if (globalcfg.find("doXY") != globalcfg.end())		    	doXY = globalcfg["doXY"];
+    if (globalcfg.find("doSnapshot") != globalcfg.end())		doSnapshot = globalcfg["doSnapshot"];
 
     if (cfg.find("gen_part_pdg_id") != cfg.end()){
         std::string gen_pdgID_str = cfg["gen_part_pdg_id"];
@@ -222,19 +244,36 @@ bool config::load_config_file(json cfg)
     if (cfg.find("DY") != cfg.end())		    	DY = cfg["DY"];
     if (cfg.find("WW") != cfg.end())		    	WW = cfg["WW"];
     if (cfg.find("runDataDriven") != cfg.end())		runDataDriven = cfg["runDataDriven"];
+    if (cfg.find("use2017XY") != cfg.end())		    use2017XY = cfg["use2017XY"];
     if (cfg.find("calcDataDriven") != cfg.end())	calcDataDriven = cfg["calcDataDriven"];
+    if (cfg.find("closure") != cfg.end())	        closure = cfg["closure"];
     if (cfg.find("era") != cfg.end())				era = cfg["era"];
     if (cfg.find("use_EEMET") != cfg.end())			use_EEMET = cfg["use_EEMET"];
     
     if (cfg.find("PDF_set_name") != cfg.end())      pdf_set_name = cfg["PDF_set_name"];
+    if (cfg.find("PDF_set_name") != cfg.end())      pdf_prod_set_name = cfg["PDF_prod_set_name"];
     if (cfg.find("PDF_nWeights") != cfg.end())      pdf_nweights = cfg["PDF_nWeights"];
     if (cfg.find("PDF_SetID") != cfg.end())         pdf_setid = cfg["PDF_SetID"];
     if (cfg.find("metfilters") != cfg.end())        metfilters = cfg["metfilters"];
     if (cfg.find("trigger") != cfg.end())			trigger = cfg["trigger"];
     TFile* ff_file = new TFile(("cfg/fakerate/fakerate_" + std::to_string(era) + ".root").c_str(), "READ");
+    TFile* ff_closure_file = new TFile(("cfg/fakerate/fakerate_" + std::to_string(era) + "_closure.root").c_str(), "READ");
     TString ff_hist_name = "iso_fake_rate";
+    TString ff_hist_name_low = "iso_fake_rate_low";
+    TString ff_hist_name_high = "iso_fake_rate_high";
+    TString ff_hist_name_barrel_low = "iso_fake_rate_barrel_low";
+    TString ff_hist_name_barrel_high = "iso_fake_rate_barrel_high";
+    TString ff_hist_name_endcap_low = "iso_fake_rate_endcap_low";
+    TString ff_hist_name_endcap_high = "iso_fake_rate_endcap_high";
     std::cout << "Reading in hist " << ff_hist_name << std::endl;
     ff_hist = (TH2D*) ff_file->Get(ff_hist_name);
+    ff_hist_low = (TH2D*) ff_file->Get(ff_hist_name_low);
+    ff_hist_high = (TH2D*) ff_file->Get(ff_hist_name_high);
+    ff_hist_barrel_low = (TH2D*) ff_file->Get(ff_hist_name_barrel_low);
+    ff_hist_barrel_high = (TH2D*) ff_file->Get(ff_hist_name_barrel_high);
+    ff_hist_endcap_low = (TH2D*) ff_file->Get(ff_hist_name_endcap_low);
+    ff_hist_endcap_high = (TH2D*) ff_file->Get(ff_hist_name_endcap_high);
+    ff_closure_hist = (TH2D*) ff_closure_file->Get(ff_hist_name);
     
     if (!runOnData) { 
 		// read in pileup file
@@ -356,6 +395,7 @@ bool config::load_config_file(json cfg)
         ele_SF = new EleSFTool(
                                 era_to_SFToolYear(era),     // year
                                 ele_id);
+        eleCorr= new EnergyScaleCorrection((std::string) getenv("MY_ANALYSIS_PATH") + "/cfg/SF/EleSFs/Run2018_Step2Closure_CoarseEtaR9Gain_v2",EnergyScaleCorrection::ECALELF);
 
 	} //!runOnData
     return true;
@@ -538,12 +578,23 @@ void config::clean_memory() {
     // fakerate histogram
     delete ff_hist;
     ff_hist = NULL;
+    delete ff_hist_low;
+    ff_hist_low = NULL;
+    delete ff_hist_high;
+    ff_hist_high = NULL;
+    delete ff_hist_barrel_high;
+    ff_hist_barrel_high = NULL;
+    delete ff_hist_endcap_high;
+    ff_hist_endcap_high = NULL;
+    delete ff_closure_hist;
+    ff_closure_hist = NULL;
     // Prefire histograms
     delete prefire_photon_hist;
     delete prefire_jet_hist;
     prefire_photon_hist = NULL;
     prefire_jet_hist = NULL;
 
+    doXY = false;
     // TT?
     TT = false;
     DY = false;
@@ -551,6 +602,11 @@ void config::clean_memory() {
     // runOnData?
     runOnData = false;
     runOnSignal = false;
+    calcDataDriven = false;
+    runDataDriven = false;
+    use2017XY = false;
+    doSnapshot = false;
+    closure = false;
     
     //ww uncertainty switch
     wwuncertainty = false;
@@ -577,11 +633,14 @@ void config::clean_memory() {
 
     delete ele_SF;
     delete muon_SF;
+    delete eleCorr;
     ele_SF = NULL;
     muon_SF = NULL;
+    eleCorr = NULL;
 
     // pdf setup
     pdf_set_name = "";
+    pdf_prod_set_name = "";
     pdf_nweights = 0;
     pdf_setid = 0;
     pdf_is_initialized = false;

@@ -55,25 +55,25 @@ EleSFTool::EleSFTool(const std::string& year, const std::string& id): ID(id){
   file_reco->Close();
   delete file_reco;
   
-//  if(std::find(EleIDs.begin(),EleIDs.end(),ID)!=EleIDs.end()){
-//      TString filename;
-//      std::string histname;
-//      filename = Form("%s/sf_ele_%s_%s.root",datapath.data(),ID.data(),year.data());
-//      TFile* file = ensureTFileEle(filename,verbose);
-//      histname = "SF_MC";
-//      hist = extractTH1Ele(file,histname);
-//      hist.SetDirectory(0);
-//      file->Close();
-//      delete file;
-//    }else{
-//        std::cerr << "Did not recognize ele ID '" << ID << "'!" << std::endl;
-//        assert(0);
-//    }
+  if(std::find(EleIDs.begin(),EleIDs.end(),ID)!=EleIDs.end()){
+      TString filename;
+      std::string histname;
+      filename = Form("%s/sf_ele_%s_%s.root",datapath.data(),ID.data(),year.data());
+      TFile* file = ensureTFileEle(filename,verbose);
+      histname = "SF_MC";
+      hist = extractTH1Ele(file,histname);
+      hist.SetDirectory(0);
+      file->Close();
+      delete file;
+    }else{
+        std::cerr << "Did not recognize ele ID '" << ID << "'!" << std::endl;
+        assert(0);
+    }
 }
 
 float EleSFTool::getSFID(double pt, double eta, const std::string& unc) {
-  Int_t ptbin = hist.GetXaxis()->FindBin(pt);
-  Int_t etabin = hist.GetYaxis()->FindBin(fabs(eta));
+  Int_t ptbin = hist.GetYaxis()->FindBin(pt);
+  Int_t etabin = hist.GetXaxis()->FindBin(eta);
   float SF  = hist.GetBinContent(etabin,ptbin);
   if(unc=="Up")
     if( eta < 1.4442){
@@ -97,9 +97,15 @@ float EleSFTool::getSFID(double pt, double eta, const std::string& unc) {
 }
 
 float EleSFTool::getSFReco(double pt, double eta, const std::string& unc) {
-  Int_t ptbin = hist.GetXaxis()->FindBin(pt);
-  Int_t etabin = hist.GetYaxis()->FindBin(fabs(eta));
-  float SF  = hist.GetBinContent(etabin,ptbin);
+  Int_t ptbin = hist_reco.GetYaxis()->FindBin(pt);
+  Int_t etabin = hist_reco.GetXaxis()->FindBin(eta);
+  Int_t last_ptbin = hist_reco.GetYaxis()->FindBin(499.);
+  Int_t last_etabin = hist_reco.GetXaxis()->FindBin(2.499);
+  Int_t last_etabin_n = hist_reco.GetXaxis()->FindBin(-2.499);
+  if( pt > 499.) ptbin = last_ptbin;
+  if( eta > 2.499) etabin = last_etabin;
+  if( eta < -2.499) etabin = last_etabin_n;
+  float SF  = hist_reco.GetBinContent(etabin,ptbin);
   return SF;
 }
 

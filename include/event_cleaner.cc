@@ -80,7 +80,7 @@ rvec <int> pair_idx(const rvec<int>& pdgID, const rvec<int>& mother_idx) {
 bool clean_gen_file( const float& lheht, const rvec<float>& lhept , const rvec<float>& lheeta, const rvec<float>& lhephi, const rvec<float>& lhemass, const rvec<int>& lhepdgid,const rvec<int>& status) {
     
     if (config::cut_type == "HT"){
-        if ((lheht > config::cut_value_min) && (lheht < config::cut_value_max)){
+        if ((lheht >= config::cut_value_min) && (lheht < config::cut_value_max)){
             return true;
 
         }
@@ -114,7 +114,7 @@ bool clean_gen_file( const float& lheht, const rvec<float>& lhept , const rvec<f
                     }
                     if( l1_pdg == -l2_pdg && found_1 && found_2){
                         auto mass = (l1 + l2).M();
-                        if ((mass > config::cut_value_min) && (mass < config::cut_value_max))
+                        if ((mass >= config::cut_value_min) && (mass < config::cut_value_max))
                             return true;
                         else
                             return false;
@@ -201,7 +201,7 @@ bool clean_gen_file( const float& lheht, const rvec<float>& lhept , const rvec<f
                    part1.SetPtEtaPhiM(lhept[idx_1],lheeta[idx_1],lhephi[idx_1],lhemass[idx_1]);
                    part2.SetPtEtaPhiM(lhept[idx_2],lheeta[idx_2],lhephi[idx_2],lhemass[idx_2]);
                    auto inv_mass = (part1 + part2).M();
-                   if( inv_mass > config::cut_value_min and inv_mass < config::cut_value_max){
+                   if( inv_mass >= config::cut_value_min and inv_mass < config::cut_value_max){
                         return true;
                    }
                    else{
