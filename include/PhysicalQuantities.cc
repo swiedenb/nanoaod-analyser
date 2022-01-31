@@ -659,6 +659,38 @@ float collinear_mass_alt(       const float& p1_pt,
 //    //return (p_tau + p2).M(); 
 //    return mass_coll_alt2; 
 //};
+rvec<int> inv_idx(                    const rvec<float>& p1_pt,
+                                      const rvec<float>& p2_pt,
+                                      const rvec<float>& p1_eta,
+                                      const rvec<float>& p2_eta,
+                                      const rvec<float>& p1_phi,
+                                      const rvec<float>& p2_phi,
+                                      const rvec<float>& p1_mass,
+                                      const rvec<float>& p2_mass,
+                                      const rvec<bool>& p1_mask,
+                                      const rvec<bool>& p2_mask) {
+    TLorentzVector p1, p2;
+    rvec<int> idx(2);
+    float highest_mass = 0;
+    int best_i = 0;
+    int best_j = 0;
+    for (unsigned int i = 0; i < p1_pt[p1_mask].size(); i++){
+        p1.SetPtEtaPhiM(p1_pt[p1_mask][i], p1_eta[p1_mask][i], p1_phi[p1_mask][i], p1_mass[p1_mask][i]);
+        double mass_vis = 0;
+        for(unsigned int j = 0; j < p2_pt[p2_mask].size(); j++){
+            p2.SetPtEtaPhiM(p2_pt[p2_mask][j], p2_eta[p2_mask][j], p2_phi[p2_mask][j], p2_mass[p2_mask][j]);
+            mass_vis = (p1 + p2).M();
+            if ( highest_mass < mass_vis){
+                highest_mass = mass_vis;
+                best_i = i;
+                best_j = j;
+            }
+        }
+    }
+    idx[0] = best_i;
+    idx[1] = best_j;
+    return idx; 
+};
 rvec<int> col_idx(                    const rvec<float>& p1_pt,
                                       const rvec<float>& p2_pt,
                                       const rvec<float>& p1_eta,
