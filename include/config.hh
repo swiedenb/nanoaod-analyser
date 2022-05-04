@@ -83,6 +83,12 @@ namespace config {
     extern TH2D* ff_hist_endcap_low;
     extern TH2D* ff_hist_endcap_high;
     extern TH2D* ff_closure_hist;
+    extern TH2D* ff_closure_hist_low;
+    extern TH2D* ff_closure_hist_high;
+    extern TH2D* ff_closure_hist_barrel_low;
+    extern TH2D* ff_closure_hist_barrel_high;
+    extern TH2D* ff_closure_hist_endcap_low;
+    extern TH2D* ff_closure_hist_endcap_high;
     extern TH2D* prefire_photon_hist;
     extern TH2D* prefire_jet_hist;
     

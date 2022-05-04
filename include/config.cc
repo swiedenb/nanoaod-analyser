@@ -90,6 +90,12 @@ namespace config {
     TH2D* ff_hist_endcap_low = NULL;
     TH2D* ff_hist_endcap_high = NULL;
     TH2D* ff_closure_hist = NULL;
+    TH2D* ff_closure_hist_low = NULL;
+    TH2D* ff_closure_hist_high = NULL;
+    TH2D* ff_closure_hist_barrel_low = NULL;
+    TH2D* ff_closure_hist_barrel_high = NULL;
+    TH2D* ff_closure_hist_endcap_low = NULL;
+    TH2D* ff_closure_hist_endcap_high = NULL;
     // Prefire histograms
     TH2D* prefire_photon_hist = NULL;
     TH2D* prefire_jet_hist = NULL;
@@ -150,7 +156,7 @@ namespace config {
     EnergyScaleCorrection *eleCorr;
     // pdf setup
     std::string pdf_set_name = "";
-    std::string pdf_prod_set_name = "";
+    std::string pdf_prod_set_name = "NNPDF31_nnlo_as_0118";
     int pdf_nweights = 0;
     int pdf_setid = 0;
     bool pdf_is_initialized = false;
@@ -220,6 +226,7 @@ bool config::load_config_file(json cfg)
     if (globalcfg.find("muon_iso_WP") != globalcfg.end())       muon_iso_WP = globalcfg["muon_iso_WP"];
     if (globalcfg.find("doXY") != globalcfg.end())		    	doXY = globalcfg["doXY"];
     if (globalcfg.find("doSnapshot") != globalcfg.end())		doSnapshot = globalcfg["doSnapshot"];
+    if (globalcfg.find("closure") != globalcfg.end())	        closure = globalcfg["closure"];
 
     if (cfg.find("gen_part_pdg_id") != cfg.end()){
         std::string gen_pdgID_str = cfg["gen_part_pdg_id"];
@@ -246,16 +253,16 @@ bool config::load_config_file(json cfg)
     if (cfg.find("runDataDriven") != cfg.end())		runDataDriven = cfg["runDataDriven"];
     if (cfg.find("use2017XY") != cfg.end())		    use2017XY = cfg["use2017XY"];
     if (cfg.find("calcDataDriven") != cfg.end())	calcDataDriven = cfg["calcDataDriven"];
-    if (cfg.find("closure") != cfg.end())	        closure = cfg["closure"];
     if (cfg.find("era") != cfg.end())				era = cfg["era"];
     if (cfg.find("use_EEMET") != cfg.end())			use_EEMET = cfg["use_EEMET"];
     
     if (cfg.find("PDF_set_name") != cfg.end())      pdf_set_name = cfg["PDF_set_name"];
-    if (cfg.find("PDF_set_name") != cfg.end())      pdf_prod_set_name = cfg["PDF_prod_set_name"];
+    if (cfg.find("PDF_prod_set_name") != cfg.end())      pdf_prod_set_name = cfg["PDF_prod_set_name"];
     if (cfg.find("PDF_nWeights") != cfg.end())      pdf_nweights = cfg["PDF_nWeights"];
     if (cfg.find("PDF_SetID") != cfg.end())         pdf_setid = cfg["PDF_SetID"];
     if (cfg.find("metfilters") != cfg.end())        metfilters = cfg["metfilters"];
     if (cfg.find("trigger") != cfg.end())			trigger = cfg["trigger"];
+    if (cfg.find("closure") != cfg.end())	        closure = cfg["closure"];
     TFile* ff_file = new TFile(("cfg/fakerate/fakerate_" + std::to_string(era) + ".root").c_str(), "READ");
     TFile* ff_closure_file = new TFile(("cfg/fakerate/fakerate_" + std::to_string(era) + "_closure.root").c_str(), "READ");
     TString ff_hist_name = "iso_fake_rate";
@@ -274,6 +281,12 @@ bool config::load_config_file(json cfg)
     ff_hist_endcap_low = (TH2D*) ff_file->Get(ff_hist_name_endcap_low);
     ff_hist_endcap_high = (TH2D*) ff_file->Get(ff_hist_name_endcap_high);
     ff_closure_hist = (TH2D*) ff_closure_file->Get(ff_hist_name);
+    ff_closure_hist_low = (TH2D*) ff_closure_file->Get(ff_hist_name_low);
+    ff_closure_hist_high = (TH2D*) ff_closure_file->Get(ff_hist_name_high);
+    ff_closure_hist_barrel_low = (TH2D*) ff_closure_file->Get(ff_hist_name_barrel_low);
+    ff_closure_hist_barrel_high = (TH2D*) ff_closure_file->Get(ff_hist_name_barrel_high);
+    ff_closure_hist_endcap_low = (TH2D*) ff_closure_file->Get(ff_hist_name_endcap_low);
+    ff_closure_hist_endcap_high = (TH2D*) ff_closure_file->Get(ff_hist_name_endcap_high);
     
     if (!runOnData) { 
 		// read in pileup file
@@ -588,6 +601,14 @@ void config::clean_memory() {
     ff_hist_endcap_high = NULL;
     delete ff_closure_hist;
     ff_closure_hist = NULL;
+    delete ff_closure_hist_low;
+    ff_closure_hist_low = NULL;
+    delete ff_closure_hist_high;
+    ff_closure_hist_high = NULL;
+    delete ff_closure_hist_barrel_high;
+    ff_closure_hist_barrel_high = NULL;
+    delete ff_closure_hist_endcap_high;
+    ff_closure_hist_endcap_high = NULL;
     // Prefire histograms
     delete prefire_photon_hist;
     delete prefire_jet_hist;

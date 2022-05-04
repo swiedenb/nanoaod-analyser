@@ -28,31 +28,33 @@ float trigger_sf(   const rvec<float>& pt,
                                     const std::string& unc ) {
         float weight = 1.0;
         for (uint i = 0; i < pt[mask].size(); i++) {
-            int eta_bin = hist->GetXaxis()->FindBin(abs(eta[mask][i]));
-            int pt_bin = hist->GetYaxis()->FindBin(pt[mask][i]);
-            int lasteta_bin = hist->GetXaxis()->FindBin(2.499);
-            int lastpt_bin = hist->GetYaxis()->FindBin(1999.);
+            int eta_bin = hist->GetYaxis()->FindBin(abs(eta[mask][i]));
+            int pt_bin = hist->GetXaxis()->FindBin(pt[mask][i]);
+            int lasteta_bin = hist->GetYaxis()->FindBin(500);
+            int lastpt_bin = hist->GetXaxis()->FindBin(999.);
             if (std::abs(eta[i]) < 5) {
                 if (unc == "") {
-                        if (pt[mask][i] > 1999.){
-                            weight *= hist->GetBinContent(eta_bin,lastpt_bin);
+                        if (pt[mask][i] > 1000.){
+                            weight *= hist->GetBinContent(lastpt_bin, eta_bin);
                         }
                         else{
-                            weight *= hist->GetBinContent(eta_bin,pt_bin);
+                            weight *= hist->GetBinContent(pt_bin, eta_bin);
                         }
                 } else if (unc == "Up") {
-                        if (pt[mask][i] > 1999.){
-                            weight *= ( hist->GetBinContent(lastpt_bin,eta_bin));
+                        if (pt[mask][i] > 1000.){
+                            weight *= ( hist->GetBinContent(lastpt_bin,eta_bin) + hist_up->GetBinContent(lastpt_bin,eta_bin));
                         }
                         else{
-                            weight *= ( hist->GetBinContent(pt_bin, eta_bin));
+                            weight *= ( hist->GetBinContent(pt_bin, eta_bin)
+                                        + hist_up->GetBinContent(pt_bin, eta_bin) );
                         }
                 } else if (unc == "Down") {
-                        if (pt[mask][i] > 1999.){
-                            weight *=  ( hist->GetBinContent(lastpt_bin, eta_bin));
+                        if (pt[mask][i] > 1000.){
+                            weight *=  ( hist->GetBinContent(lastpt_bin, eta_bin) - hist_down->GetBinContent(lastpt_bin, eta_bin));
                         }
                         else{
-                            weight *= ( hist->GetBinContent(pt_bin, eta_bin));
+                            weight *= ( hist->GetBinContent(pt_bin, eta_bin)
+                                            - hist_down->GetBinContent(pt_bin, eta_bin) );
                         }
                 }
             }
@@ -132,24 +134,32 @@ float dd_fakerate( const rvec<float>& tau_pt,
           Int_t tauptbin = config::ff_hist_barrel_low->GetXaxis()->FindBin(tau_pt[tau_mask][col_idx[0]]);
           Int_t tauptojetptbin = config::ff_hist_barrel_low->GetYaxis()->FindBin(tau_pt_over_jet_pt);
           FF  = config::ff_hist_barrel_low->GetBinContent(tauptbin,tauptojetptbin);
-          FF_closure  = config::ff_closure_hist->GetBinContent(tauptbin,tauptojetptbin);
+          FF_closure  = config::ff_closure_hist_low->GetBinContent(tauptbin,tauptojetptbin);
       }
       else{
           Int_t tauptbin = config::ff_hist_endcap_low->GetXaxis()->FindBin(tau_pt[tau_mask][col_idx[0]]);
           Int_t tauptojetptbin = config::ff_hist_endcap_low->GetYaxis()->FindBin(tau_pt_over_jet_pt);
           FF  = config::ff_hist_endcap_low->GetBinContent(tauptbin,tauptojetptbin);
-          FF_closure  = config::ff_closure_hist->GetBinContent(tauptbin,tauptojetptbin);
+          FF_closure  = config::ff_closure_hist_low->GetBinContent(tauptbin,tauptojetptbin);
       }
   }
   else{
       if( abs(tau_eta[tau_mask][col_idx[0]]) < 1.446){
-          Int_t tauptbin = config::ff_hist_barrel_high->GetXaxis()->FindBin(tau_pt[tau_mask][col_idx[0]]);
+          auto tau_pt_value = tau_pt[tau_mask][col_idx[0]];
+          if( tau_pt_value > 999.){
+            tau_pt_value = 999.;
+          }
+          Int_t tauptbin = config::ff_hist_barrel_high->GetXaxis()->FindBin(tau_pt_value);
           Int_t tauptojetptbin = config::ff_hist_barrel_high->GetYaxis()->FindBin(tau_pt_over_jet_pt);
           FF  = config::ff_hist_barrel_high->GetBinContent(tauptbin,tauptojetptbin);
           FF_closure  = config::ff_closure_hist->GetBinContent(tauptbin,tauptojetptbin);
       }
       else{
-          Int_t tauptbin = config::ff_hist_endcap_high->GetXaxis()->FindBin(tau_pt[tau_mask][col_idx[0]]);
+          auto tau_pt_value = tau_pt[tau_mask][col_idx[0]];
+          if( tau_pt_value > 999.){
+            tau_pt_value = 999.;
+          }
+          Int_t tauptbin = config::ff_hist_barrel_high->GetXaxis()->FindBin(tau_pt_value);
           Int_t tauptojetptbin = config::ff_hist_endcap_high->GetYaxis()->FindBin(tau_pt_over_jet_pt);
           FF  = config::ff_hist_endcap_high->GetBinContent(tauptbin,tauptojetptbin);
           FF_closure  = config::ff_closure_hist->GetBinContent(tauptbin,tauptojetptbin);
@@ -310,7 +320,7 @@ float calc_top_pt_reweighting( const rvec<int>& gen_pdg,
     if (find_top1 && find_top2){
         if (top1_pt > 500.) top1_pt = 500.;
         if (top2_pt > 500.) top2_pt = 500.;
-        return std::sqrt(func(gen_pt[2]) * func(gen_pt[3]));
+        return std::sqrt(func(top1_pt) * func(top2_pt));
     }
     return 1.0;
 };
@@ -327,159 +337,465 @@ float muon_reco_eff( const rvec<float>& muon_pt,
         muon.SetPtEtaPhiM(muon_pt[muon_mask][i],muon_eta[muon_mask][i],muon_phi[muon_mask][i],muon_mass[muon_mask][i]);
         if (runtype == ""){
             if( fabs(muon.Eta()) < 1.6){
-                if( muon.Pt() <= 100.){
-                    weight *= 0.9943;
+                if(config::era == 2018){
+                    if( muon.Pt() <= 100.){
+                        weight *= 0.9943;
+                    }
+                    else if ( 100. < muon.Pt() <= 150.){
+                        weight *= 0.9948;
+                    }
+                    else if ( 150. < muon.Pt() <= 200.){
+                        weight *= 0.9950;
+                    }
+                    else if ( 200. < muon.Pt() <= 300.){
+                        weight *= 0.994;
+                    }
+                    else if ( 300. < muon.Pt() <= 400.){
+                        weight *= 0.9914;
+                    }
+                    else if ( 400. < muon.Pt() <= 600.){
+                        weight *= 0.993;
+                    }
+                    else if ( 600. < muon.Pt() <= 1500.){
+                        weight *= 0.991;
+                    }
+                    else if ( 1500. < muon.Pt() <= 3500.){
+                        weight *= 1.;
+                    }
                 }
-                else if ( 100. < muon.Pt() <= 150.){
-                    weight *= 0.9948;
+                else if (config::era == 2017){
+                    if( muon.Pt() <= 100.){
+                        weight *= 0.9938;
+                    }
+                    else if ( 100. < muon.Pt() <= 150.){
+                        weight *= 0.9950;
+                    }
+                    else if ( 150. < muon.Pt() <= 200.){
+                        weight *= 0.996;
+                    }
+                    else if ( 200. < muon.Pt() <= 300.){
+                        weight *= 0.996;
+                    }
+                    else if ( 300. < muon.Pt() <= 400.){
+                        weight *= 0.994;
+                    }
+                    else if ( 400. < muon.Pt() <= 600.){
+                        weight *= 1.003;
+                    }
+                    else if ( 600. < muon.Pt() <= 1500.){
+                        weight *= 0.987;
+                    }
+                    else if ( 1500. < muon.Pt() <= 3500.){
+                        weight *= 0.9;
+                    }
                 }
-                else if ( 150. < muon.Pt() <= 200.){
-                    weight *= 0.9950;
-                }
-                else if ( 200. < muon.Pt() <= 300.){
-                    weight *= 0.994;
-                }
-                else if ( 300. < muon.Pt() <= 400.){
-                    weight *= 0.9914;
-                }
-                else if ( 400. < muon.Pt() <= 600.){
-                    weight *= 0.993;
-                }
-                else if ( 600. < muon.Pt() <= 1500.){
-                    weight *= 0.991;
-                }
-                else if ( 1500. < muon.Pt() <= 3500.){
-                    weight *= 1.;
+                else if (config::era == 2016){
+                    if( muon.Pt() <= 100.){
+                        weight *= 0.9914;
+                    }
+                    else if ( 100. < muon.Pt() <= 150.){
+                        weight *= 0.9936;
+                    }
+                    else if ( 150. < muon.Pt() <= 200.){
+                        weight *= 0.993;
+                    }
+                    else if ( 200. < muon.Pt() <= 300.){
+                        weight *= 0.993;
+                    }
+                    else if ( 300. < muon.Pt() <= 400.){
+                        weight *= 0.990;
+                    }
+                    else if ( 400. < muon.Pt() <= 600.){
+                        weight *= 0.990;
+                    }
+                    else if ( 600. < muon.Pt() <= 1500.){
+                        weight *= 0.989;
+                    }
+                    else if ( 1500. < muon.Pt() <= 3500.){
+                        weight *= 0.8;
+                    }
                 }
             }
             if( fabs(muon.Eta()) >= 1.6){
-                if ( 100. < muon.Pt() <= 150.){
-                    weight *= 0.993;
+                if(config::era == 2018){
+                    if ( 100. < muon.Pt() <= 150.){
+                        weight *= 0.993;
+                    }
+                    else if ( 150. < muon.Pt() <= 200.){
+                        weight *= 0.99;
+                    }
+                    else if ( 200. < muon.Pt() <= 300.){
+                        weight *= 0.988;
+                    }
+                    else if ( 300. < muon.Pt() <= 400.){
+                        weight *= 0.981;
+                    }
+                    else if ( 400. < muon.Pt() <= 600.){
+                        weight *= 0.983;
+                    }
+                    else if ( 600. < muon.Pt() <= 1500.){
+                        weight *= 0.978;
+                    }
+                    else if ( 1500. < muon.Pt() <= 3500.){
+                        weight *= 0.98;
+                    }
                 }
-                else if ( 150. < muon.Pt() <= 200.){
-                    weight *= 0.99;
+                else if(config::era == 2017){
+                    if ( 100. < muon.Pt() <= 150.){
+                        weight *= 0.993;
+                    }
+                    else if ( 150. < muon.Pt() <= 200.){
+                        weight *= 0.989;
+                    }
+                    else if ( 200. < muon.Pt() <= 300.){
+                        weight *= 0.986;
+                    }
+                    else if ( 300. < muon.Pt() <= 400.){
+                        weight *= 0.989;
+                    }
+                    else if ( 400. < muon.Pt() <= 600.){
+                        weight *= 0.983;
+                    }
+                    else if ( 600. < muon.Pt() <= 1500.){
+                        weight *= 0.986;
+                    }
+                    else if ( 1500. < muon.Pt() <= 3500.){
+                        weight *= 1.01;
+                    }
                 }
-                else if ( 200. < muon.Pt() <= 300.){
-                    weight *= 0.988;
-                }
-                else if ( 300. < muon.Pt() <= 400.){
-                    weight *= 0.981;
-                }
-                else if ( 400. < muon.Pt() <= 600.){
-                    weight *= 0.983;
-                }
-                else if ( 600. < muon.Pt() <= 1500.){
-                    weight *= 0.978;
-                }
-                else if ( 1500. < muon.Pt() <= 3500.){
-                    weight *= 0.98;
+                else if(config::era == 2016){
+                    if ( 100. < muon.Pt() <= 150.){
+                        weight *= 0.993;
+                    }
+                    else if ( 150. < muon.Pt() <= 200.){
+                        weight *= 0.991;
+                    }
+                    else if ( 200. < muon.Pt() <= 300.){
+                        weight *= 0.985;
+                    }
+                    else if ( 300. < muon.Pt() <= 400.){
+                        weight *= 0.981;
+                    }
+                    else if ( 400. < muon.Pt() <= 600.){
+                        weight *= 0.979;
+                    }
+                    else if ( 600. < muon.Pt() <= 1500.){
+                        weight *= 0.978;
+                    }
+                    else if ( 1500. < muon.Pt() <= 3500.){
+                        weight *= 0.9;
+                    }
                 }
             }
         }
         else if (runtype == "Up"){
             if( fabs(muon.Eta()) < 1.6){
-                if( muon.Pt() <= 100.){
-                    weight *= (0.9943 + 0.0007);
+                if(config::era == 2018){
+                    if( muon.Pt() <= 100.){
+                        weight *= (0.9943 + 0.0007);
+                    }
+                    else if ( 100. < muon.Pt() <= 150.){
+                        weight *= (0.9948 + 0.0007);
+                    }
+                    else if ( 150. < muon.Pt() <= 200.){
+                        weight *= (0.9950 + 0.0009); 
+                    }
+                    else if ( 200. < muon.Pt() <= 300.){
+                        weight *= (0.994 + 0.001);
+                    }
+                    else if ( 300. < muon.Pt() <= 400.){
+                        weight *= (0.9914 + 0.0009); 
+                    }
+                    else if ( 400. < muon.Pt() <= 600.){
+                        weight *= (0.993 + 0.002);
+                    }
+                    else if ( 600. < muon.Pt() <= 1500.){
+                        weight *= (0.991 + 0.004);
+                    }
+                    else if ( 1500. < muon.Pt() <= 3500.){
+                        weight *= (1. + 0.1);
+                    }
                 }
-                else if ( 100. < muon.Pt() <= 150.){
-                    weight *= (0.9948 + 0.0007);
+                else if (config::era == 2017){
+                    if( muon.Pt() <= 100.){
+                        weight *= 0.9938 + 0.0006;
+                    }
+                    else if ( 100. < muon.Pt() <= 150.){
+                        weight *= 0.9950 + 0.0007;
+                    }
+                    else if ( 150. < muon.Pt() <= 200.){
+                        weight *= 0.996 + 0.001;
+                    }
+                    else if ( 200. < muon.Pt() <= 300.){
+                        weight *= 0.996 + 0.001;
+                    }
+                    else if ( 300. < muon.Pt() <= 400.){
+                        weight *= 0.994 + 0.006;
+                    }
+                    else if ( 400. < muon.Pt() <= 600.){
+                        weight *= 1.003 + 0.006;
+                    }
+                    else if ( 600. < muon.Pt() <= 1500.){
+                        weight *= 0.987 + 0.003;
+                    }
+                    else if ( 1500. < muon.Pt() <= 3500.){
+                        weight *= 0.9 + 0.1;
+                    }
                 }
-                else if ( 150. < muon.Pt() <= 200.){
-                    weight *= (0.9950 + 0.0009); 
-                }
-                else if ( 200. < muon.Pt() <= 300.){
-                    weight *= (0.994 + 0.001);
-                }
-                else if ( 300. < muon.Pt() <= 400.){
-                    weight *= (0.9914 + 0.0009); 
-                }
-                else if ( 400. < muon.Pt() <= 600.){
-                    weight *= (0.993 + 0.002);
-                }
-                else if ( 600. < muon.Pt() <= 1500.){
-                    weight *= (0.991 + 0.004);
-                }
-                else if ( 1500. < muon.Pt() <= 3500.){
-                    weight *= 1.;
+                else if (config::era == 2016){
+                    if( muon.Pt() <= 100.){
+                        weight *= 0.9914 + 0.0008;
+                    }
+                    else if ( 100. < muon.Pt() <= 150.){
+                        weight *= 0.9936 + 0.0009;
+                    }
+                    else if ( 150. < muon.Pt() <= 200.){
+                        weight *= 0.993 + 0.001;
+                    }
+                    else if ( 200. < muon.Pt() <= 300.){
+                        weight *= 0.993 + 0.002;
+                    }
+                    else if ( 300. < muon.Pt() <= 400.){
+                        weight *= 0.990 + 0.004;
+                    }
+                    else if ( 400. < muon.Pt() <= 600.){
+                        weight *= 0.990 + 0.003;
+                    }
+                    else if ( 600. < muon.Pt() <= 1500.){
+                        weight *= 0.989 + 0.004;
+                    }
+                    else if ( 1500. < muon.Pt() <= 3500.){
+                        weight *= 0.8 + 0.3;
+                    }
                 }
             }
             if( fabs(muon.Eta()) >= 1.6){
-                if ( 100. < muon.Pt() <= 150.){
-                    weight *=( 0.993 + 0.001);
+                if(config::era == 2018){
+                    if ( 100. < muon.Pt() <= 150.){
+                        weight *=( 0.993 + 0.001);
+                    }
+                    else if ( 150. < muon.Pt() <= 200.){
+                        weight *= (0.99 + 0.001); 
+                    }
+                    else if ( 200. < muon.Pt() <= 300.){
+                        weight *= (0.988 + 0.001);
+                    }
+                    else if ( 300. < muon.Pt() <= 400.){
+                        weight *= (0.981 + 0.002);
+                    }
+                    else if ( 400. < muon.Pt() <= 600.){
+                        weight *= (0.983 + 0.003);
+                    }
+                    else if ( 600. < muon.Pt() <= 1500.){
+                        weight *= (0.978 + 0.006);
+                    }
+                    else if ( 1500. < muon.Pt() <= 3500.){
+                        weight *= (0.98 + 0.03);
+                    }
                 }
-                else if ( 150. < muon.Pt() <= 200.){
-                    weight *= (0.99 + 0.001); 
+                else if(config::era == 2017){
+                    if ( 100. < muon.Pt() <= 150.){
+                        weight *= 0.993 + 0.001;
+                    }
+                    else if ( 150. < muon.Pt() <= 200.){
+                        weight *= 0.989 + 0.001;
+                    }
+                    else if ( 200. < muon.Pt() <= 300.){
+                        weight *= 0.986 + 0.001;
+                    }
+                    else if ( 300. < muon.Pt() <= 400.){
+                        weight *= 0.989 + 0.001;
+                    }
+                    else if ( 400. < muon.Pt() <= 600.){
+                        weight *= 0.983 + 0.003;
+                    }
+                    else if ( 600. < muon.Pt() <= 1500.){
+                        weight *= 0.986 + 0.006;
+                    }
+                    else if ( 1500. < muon.Pt() <= 3500.){
+                        weight *= 1.01 + 0.01;
+                    }
                 }
-                else if ( 200. < muon.Pt() <= 300.){
-                    weight *= (0.988 + 0.001);
-                }
-                else if ( 300. < muon.Pt() <= 400.){
-                    weight *= (0.981 + 0.002);
-                }
-                else if ( 400. < muon.Pt() <= 600.){
-                    weight *= (0.983 + 0.003);
-                }
-                else if ( 600. < muon.Pt() <= 1500.){
-                    weight *= (0.978 + 0.006);
-                }
-                else if ( 1500. < muon.Pt() <= 3500.){
-                    weight *= (0.98 + 0.03);
+                else if(config::era == 2016){
+                    if ( 100. < muon.Pt() <= 150.){
+                        weight *= 0.993 + 0.001;
+                    }
+                    else if ( 150. < muon.Pt() <= 200.){
+                        weight *= 0.991 + 0.001;
+                    }
+                    else if ( 200. < muon.Pt() <= 300.){
+                        weight *= 0.985 + 0.001;
+                    }
+                    else if ( 300. < muon.Pt() <= 400.){
+                        weight *= 0.981 + 0.002;
+                    }
+                    else if ( 400. < muon.Pt() <= 600.){
+                        weight *= 0.979 + 0.004;
+                    }
+                    else if ( 600. < muon.Pt() <= 1500.){
+                        weight *= 0.978 + 0.005;
+                    }
+                    else if ( 1500. < muon.Pt() <= 3500.){
+                        weight *= 0.9 + 0.2;
+                    }
                 }
             }
         }
         else if (runtype == "Down"){
             if( fabs(muon.Eta()) < 1.6){
-                if( muon.Pt() <= 100.){
-                    weight *= (0.9943 - 0.0007);
+                if(config::era == 2018){
+                    if( muon.Pt() <= 100.){
+                        weight *= (0.9943 - 0.0007);
+                    }
+                    else if ( 100. < muon.Pt() <= 150.){
+                        weight *= (0.9948 - 0.0007);
+                    }
+                    else if ( 150. < muon.Pt() <= 200.){
+                        weight *= (0.9950 - 0.0009); 
+                    }
+                    else if ( 200. < muon.Pt() <= 300.){
+                        weight *= (0.994 - 0.001);
+                    }
+                    else if ( 300. < muon.Pt() <= 400.){
+                        weight *= (0.9914 - 0.0009); 
+                    }
+                    else if ( 400. < muon.Pt() <= 600.){
+                        weight *= (0.993 - 0.002);
+                    }
+                    else if ( 600. < muon.Pt() <= 1500.){
+                        weight *= (0.991 - 0.004);
+                    }
+                    else if ( 1500. < muon.Pt() <= 3500.){
+                        weight *= (1. - 0.1);
+                    }
                 }
-                else if ( 100. < muon.Pt() <= 150.){
-                    weight *= (0.9948 - 0.0007);
+                else if (config::era == 2017){
+                    if( muon.Pt() <= 100.){
+                        weight *= 0.9938 - 0.0006;
+                    }
+                    else if ( 100. < muon.Pt() <= 150.){
+                        weight *= 0.9950 - 0.0007;
+                    }
+                    else if ( 150. < muon.Pt() <= 200.){
+                        weight *= 0.996 - 0.001;
+                    }
+                    else if ( 200. < muon.Pt() <= 300.){
+                        weight *= 0.996 - 0.001;
+                    }
+                    else if ( 300. < muon.Pt() <= 400.){
+                        weight *= 0.994 - 0.006;
+                    }
+                    else if ( 400. < muon.Pt() <= 600.){
+                        weight *= 1.003 - 0.006;
+                    }
+                    else if ( 600. < muon.Pt() <= 1500.){
+                        weight *= 0.987 - 0.003;
+                    }
+                    else if ( 1500. < muon.Pt() <= 3500.){
+                        weight *= 0.9 - 0.1;
+                    }
                 }
-                else if ( 150. < muon.Pt() <= 200.){
-                    weight *= (0.9950 - 0.0009); 
-                }
-                else if ( 200. < muon.Pt() <= 300.){
-                    weight *= (0.994 - 0.001);
-                }
-                else if ( 300. < muon.Pt() <= 400.){
-                    weight *= (0.9914 - 0.0009); 
-                }
-                else if ( 400. < muon.Pt() <= 600.){
-                    weight *= (0.993 - 0.002);
-                }
-                else if ( 600. < muon.Pt() <= 1500.){
-                    weight *= (0.991 - 0.004);
-                }
-                else if ( 1500. < muon.Pt() <= 3500.){
-                    weight *= (1. - 0.1);
+                else if (config::era == 2016){
+                    if( muon.Pt() <= 100.){
+                        weight *= 0.9914 - 0.0008;
+                    }
+                    else if ( 100. < muon.Pt() <= 150.){
+                        weight *= 0.9936 - 0.0009;
+                    }
+                    else if ( 150. < muon.Pt() <= 200.){
+                        weight *= 0.993 - 0.001;
+                    }
+                    else if ( 200. < muon.Pt() <= 300.){
+                        weight *= 0.993 - 0.002;
+                    }
+                    else if ( 300. < muon.Pt() <= 400.){
+                        weight *= 0.990 - 0.004;
+                    }
+                    else if ( 400. < muon.Pt() <= 600.){
+                        weight *= 0.990 - 0.003;
+                    }
+                    else if ( 600. < muon.Pt() <= 1500.){
+                        weight *= 0.989 - 0.004;
+                    }
+                    else if ( 1500. < muon.Pt() <= 3500.){
+                        weight *= 0.8 - 0.3;
+                    }
                 }
             }
             if( fabs(muon.Eta()) >= 1.6){
-                if ( 100. < muon.Pt() <= 150.){
-                    weight *=( 0.993 - 0.001);
+                if(config::era == 2018){
+                    if ( 100. < muon.Pt() <= 150.){
+                        weight *=( 0.993 - 0.001);
+                    }
+                    else if ( 150. < muon.Pt() <= 200.){
+                        weight *= (0.99 - 0.001); 
+                    }
+                    else if ( 200. < muon.Pt() <= 300.){
+                        weight *= (0.988 - 0.001);
+                    }
+                    else if ( 300. < muon.Pt() <= 400.){
+                        weight *= (0.981 - 0.002);
+                    }
+                    else if ( 400. < muon.Pt() <= 600.){
+                        weight *= (0.983 - 0.003);
+                    }
+                    else if ( 600. < muon.Pt() <= 1500.){
+                        weight *= (0.978 - 0.006);
+                    }
+                    else if ( 1500. < muon.Pt() <= 3500.){
+                        weight *= (0.98 - 0.03);
+                    }
                 }
-                else if ( 150. < muon.Pt() <= 200.){
-                    weight *= (0.99 - 0.001); 
+                else if(config::era == 2017){
+                    if ( 100. < muon.Pt() <= 150.){
+                        weight *= 0.993 - 0.001;
+                    }
+                    else if ( 150. < muon.Pt() <= 200.){
+                        weight *= 0.989 - 0.001;
+                    }
+                    else if ( 200. < muon.Pt() <= 300.){
+                        weight *= 0.986 - 0.001;
+                    }
+                    else if ( 300. < muon.Pt() <= 400.){
+                        weight *= 0.989 - 0.001;
+                    }
+                    else if ( 400. < muon.Pt() <= 600.){
+                        weight *= 0.983 - 0.003;
+                    }
+                    else if ( 600. < muon.Pt() <= 1500.){
+                        weight *= 0.986 - 0.006;
+                    }
+                    else if ( 1500. < muon.Pt() <= 3500.){
+                        weight *= 1.01 - 0.01;
+                    }
                 }
-                else if ( 200. < muon.Pt() <= 300.){
-                    weight *= (0.988 - 0.001);
-                }
-                else if ( 300. < muon.Pt() <= 400.){
-                    weight *= (0.981 - 0.002);
-                }
-                else if ( 400. < muon.Pt() <= 600.){
-                    weight *= (0.983 - 0.003);
-                }
-                else if ( 600. < muon.Pt() <= 1500.){
-                    weight *= (0.978 - 0.006);
-                }
-                else if ( 1500. < muon.Pt() <= 3500.){
-                    weight *= (0.98 - 0.03);
+                else if(config::era == 2016){
+                    if ( 100. < muon.Pt() <= 150.){
+                        weight *= 0.993 - 0.001;
+                    }
+                    else if ( 150. < muon.Pt() <= 200.){
+                        weight *= 0.991 - 0.001;
+                    }
+                    else if ( 200. < muon.Pt() <= 300.){
+                        weight *= 0.985 - 0.001;
+                    }
+                    else if ( 300. < muon.Pt() <= 400.){
+                        weight *= 0.981 - 0.002;
+                    }
+                    else if ( 400. < muon.Pt() <= 600.){
+                        weight *= 0.979 - 0.004;
+                    }
+                    else if ( 600. < muon.Pt() <= 1500.){
+                        weight *= 0.978 - 0.005;
+                    }
+                    else if ( 1500. < muon.Pt() <= 3500.){
+                        weight *= 0.9 - 0.2;
+                    }
                 }
             }
         }
     }
-    return 1.0;
+    return weight;
 };
 
 // function for pdf weights

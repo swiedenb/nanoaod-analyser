@@ -180,7 +180,7 @@ rvec<float> muon_reso_smearing(
                     sigma = 0.0174 + 0.000087*p - 3.3*pow(10,-9)*p*p - 1.6*pow(10,-11)*p*p*p + 5.*pow(10,-15)*p*p*p*p;
                   }
                   auto p_new = p;
-                  if(abs(eta[i]) <= 1.2){
+                  if(abs(eta[i]) >= 1.2){
                       p_new = p * ( 1 + gauss->Gaus(0,sigma * 0.57));
                   }
                   if(direction == "Up"){
@@ -190,7 +190,7 @@ rvec<float> muon_reso_smearing(
                     p_new = p * ( 1 - gauss->Gaus(0,sigma * 0.46));
                   }
                   auto pt_new = p_new * 1./cosh(eta[i]);
-                  pt_smeared.push_back(pt_new);
+                  pt_smeared.push_back(std::max(0.,pt_new));
               
               }
           }
@@ -1787,10 +1787,10 @@ RNode apply_datadriven(RNode df, std::string muon_shift, std::string tau_shift, 
     }
     if (not config::runOnData){
         auto df_mc_tau_veto_signal_noniso = df_mt_signal_noniso.Filter([](const rvec<int> col_idx, const rvec<UChar_t> genpartflav, const rvec<bool> tau_mask){
-            if (genpartflav[tau_mask][col_idx[0]] == 0) return false;
+            if (genpartflav[tau_mask][col_idx[0]] != 0) return false;
             else return true;}, {"col_idx", "Tau_genPartFlav", "NonIso_Tau"},"Data Driven MC real Tau veto");
         auto df_mc_no_fake_signal_noniso = df_mt_signal_noniso.Filter([](const rvec<int> col_idx, const rvec<UChar_t> genpartflav, const rvec<bool> tau_mask){
-            if (genpartflav[tau_mask][col_idx[0]] != 0) return false;
+            if (genpartflav[tau_mask][col_idx[0]] == 0) return false;
             else return true;}, {"col_idx", "Tau_genPartFlav", "NonIso_Tau"},"Data Driven MC real Tau veto");
 	    //create_datadriven_hists(df_mc_tau_veto_signal_noniso, "Fakes_SignalRegion_MC", muon_shift, tau_shift, met_shift,"total_weight");
 	    //create_datadriven_hists(df_mt_signal_noniso, "Fakes_SignalRegion_MC", muon_shift, tau_shift, met_shift,"total_weight");
@@ -1959,6 +1959,7 @@ RNode run_analyser(  RNode df,
 	// creates mask, which fills bool tags for taus which fulfil id and are in acceptance
 	auto masked = triggered.Define("Tau_mask", tau_acceptance_and_id_and_dm, {"Tau_pt" + tau_shift, "Tau_eta" + tau_shift, "Tau_dz", "Tau_charge", config::tau_dm, "Tau_decayMode", "Tau_jetIdx", config::tau_iso, config::tau_antiEle, config::tau_antiMuon})
 							  .Define("Muon_mask", muon_acceptance_and_id, {"Muon_pt_corr" + muon_shift, "Muon_eta", "Muon_isPFcand", "Muon_highPtId", "Muon_tkRelIso"})
+							  .Define("SecondElectron_mask", di_ele_id, {"Electron_pt" + ele_shift, "Electron_eta", "Electron_cutBased"})
 							  .Define("DiElectron_mask", di_ele_id, {"Electron_pt" + ele_shift, "Electron_eta", "Electron_cutBased"})
 							  .Define("Electron_mask", ele_acceptance_and_simpleid, {"Electron_pt", "Electron_eta", "Electron_cutBased_HEEP"});
 	
@@ -1989,7 +1990,8 @@ RNode run_analyser(  RNode df,
         // also, cut any event with electrons or muons
         auto evntselect = masked.Filter(nparticle_cut, {"Tau_mask"}, "select_taus")
                                 .Filter(nparticle_cut, {"Electron_mask"}, "select_eles")
-                                .Filter(nparticle_veto, {"Muon_mask"}, "select_muons");
+                                .Filter(nparticle_veto, {"Muon_mask"}, "select_muons")
+                                .Filter(nparticle_veto, {"SecondElectron_mask"}, "second ele veto");
         
         
         auto df_col_idx = evntselect.Define("col_idx", col_idx, {"Tau_pt" + tau_shift, "Electron_pt" + ele_shift, "Tau_eta" + tau_shift, "Electron_eta", "Tau_phi" + tau_shift, "Electron_phi", "Tau_mass" + tau_shift, "Electron_mass" + ele_shift, met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift , "Tau_mask", "Electron_mask"});   
