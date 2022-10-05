@@ -169,8 +169,16 @@ bool config::load_config_file(json cfg)
 	// load all numbers from the config file
 	json globalcfg;
     std::ifstream cfg_json;
-    cfg_json.open("cfg/analysis_config.cfg");
-    cfg_json >> globalcfg;
+    if (cfg.find("globalconfig") == cfg.end()) {
+        std::cout << "No global Configuration file given!" << std::endl;
+        cfg_json.open("cfg/analysis_config.cfg");
+        cfg_json >> globalcfg;
+    }
+	// load all numbers from the config file
+    else{
+        cfg_json.open(cfg["globalconfig"]);
+        cfg_json >> globalcfg;
+    }
 
     auto int_to_WP = [] (const int WP_int) {
         switch (WP_int) {
@@ -263,8 +271,8 @@ bool config::load_config_file(json cfg)
     if (cfg.find("metfilters") != cfg.end())        metfilters = cfg["metfilters"];
     if (cfg.find("trigger") != cfg.end())			trigger = cfg["trigger"];
     if (cfg.find("closure") != cfg.end())	        closure = cfg["closure"];
-    TFile* ff_file = new TFile(("cfg/fakerate/fakerate_" + std::to_string(era) + ".root").c_str(), "READ");
-    TFile* ff_closure_file = new TFile(("cfg/fakerate/fakerate_" + std::to_string(era) + "_closure.root").c_str(), "READ");
+    TFile* ff_file = new TFile(("cfg/fakerate/fakerate_" + std::to_string(era)+ "_etau" + ".root").c_str(), "READ");
+    TFile* ff_closure_file = new TFile(("cfg/fakerate/fakerate_" + std::to_string(era) + "_closure" + "_etau" + ".root").c_str(), "READ");
     TString ff_hist_name = "iso_fake_rate";
     TString ff_hist_name_low = "iso_fake_rate_low";
     TString ff_hist_name_high = "iso_fake_rate_high";
@@ -308,6 +316,16 @@ bool config::load_config_file(json cfg)
             prefire_jet_hist = (TH2D*) prefire_jet_file->Get(pj_hist_name);
         }
 
+        // read in prefiring photon file
+        if (cfg.find("prefire_photon_hist") != cfg.end()) {
+            TPRegexp r1("[^/]+(?=/$|$)");
+            TFile* prefire_photon_file = new TFile(((std::string) cfg["prefire_photon_hist"]).c_str(), "READ");
+            TString pp_hist_name = (std::string) cfg["prefire_photon_hist"];
+            pp_hist_name.Resize( pp_hist_name.Length() - 5);
+            pp_hist_name = pp_hist_name(r1);
+            std::cout << "Reading in hist " << pp_hist_name << std::endl;
+            prefire_photon_hist = (TH2D*) prefire_photon_file->Get(pp_hist_name);
+        }
         if (cfg.find("trigger_hist") != cfg.end() && cfg.find("trigger_file") != cfg.end()) {
             TPRegexp r1("[^/]+(?=/$|$)");
             TFile* trigger_file = new TFile(((std::string) cfg["trigger_file"]).c_str(), "READ");
@@ -321,19 +339,8 @@ bool config::load_config_file(json cfg)
             }
             if (cfg.find("trigger_hist_down") != cfg.end() ) {
                 TString trigger_hist_name = (std::string) cfg["trigger_hist_down"];
-                std::cout << "Reading in hist " << trigger_hist_name << std::endl;
                 trigger_hist_down = (TH2D*) trigger_file->Get(trigger_hist_name);
             }
-        }
-        // read in prefiring photon file
-        if (cfg.find("prefire_photon_hist") != cfg.end()) {
-            TPRegexp r1("[^/]+(?=/$|$)");
-            TFile* prefire_photon_file = new TFile(((std::string) cfg["prefire_photon_hist"]).c_str(), "READ");
-            TString pp_hist_name = (std::string) cfg["prefire_photon_hist"];
-            pp_hist_name.Resize( pp_hist_name.Length() - 5);
-            pp_hist_name = pp_hist_name(r1);
-            std::cout << "Reading in hist " << pp_hist_name << std::endl;
-            prefire_photon_hist = (TH2D*) prefire_photon_file->Get(pp_hist_name);
         }
 
 //		// read in prefiring jet file
@@ -408,7 +415,15 @@ bool config::load_config_file(json cfg)
         ele_SF = new EleSFTool(
                                 era_to_SFToolYear(era),     // year
                                 ele_id);
-        eleCorr= new EnergyScaleCorrection((std::string) getenv("MY_ANALYSIS_PATH") + "/cfg/SF/EleSFs/Run2018_Step2Closure_CoarseEtaR9Gain_v2",EnergyScaleCorrection::ECALELF);
+        if(era == 2016){
+            eleCorr= new EnergyScaleCorrection((std::string) getenv("MY_ANALYSIS_PATH") + "/cfg/SF/EleSFs/Legacy2016_07Aug2017_FineEtaR9_v3_ele",EnergyScaleCorrection::ECALELF);
+        }
+        else if(era == 2017){
+            eleCorr= new EnergyScaleCorrection((std::string) getenv("MY_ANALYSIS_PATH") + "/cfg/SF/EleSFs/Run2017_17Nov2017_v1_ele_unc",EnergyScaleCorrection::ECALELF);
+        }
+        else if(era == 2018){
+            eleCorr= new EnergyScaleCorrection((std::string) getenv("MY_ANALYSIS_PATH") + "/cfg/SF/EleSFs/Run2018_Step2Closure_CoarseEtaR9Gain_v2",EnergyScaleCorrection::ECALELF);
+        }
 
 	} //!runOnData
     return true;

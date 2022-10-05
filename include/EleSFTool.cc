@@ -60,7 +60,15 @@ EleSFTool::EleSFTool(const std::string& year, const std::string& id): ID(id){
       std::string histname;
       filename = Form("%s/sf_ele_%s_%s.root",datapath.data(),ID.data(),year.data());
       TFile* file = ensureTFileEle(filename,verbose);
-      histname = "SF_MC";
+      if (year == "2016Legacy"){
+          histname = "sf_ele_heep";
+      }
+      else if ( year == "2017ReReco" ){
+          histname = "SF_MC_2017";
+      }
+      else{
+          histname = "SF_MC";
+      }
       hist = extractTH1Ele(file,histname);
       hist.SetDirectory(0);
       file->Close();

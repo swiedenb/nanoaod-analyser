@@ -28,33 +28,33 @@ float trigger_sf(   const rvec<float>& pt,
                                     const std::string& unc ) {
         float weight = 1.0;
         for (uint i = 0; i < pt[mask].size(); i++) {
-            int eta_bin = hist->GetYaxis()->FindBin(abs(eta[mask][i]));
-            int pt_bin = hist->GetXaxis()->FindBin(pt[mask][i]);
-            int lasteta_bin = hist->GetYaxis()->FindBin(500);
-            int lastpt_bin = hist->GetXaxis()->FindBin(999.);
+            int eta_bin = hist->GetXaxis()->FindBin(abs(eta[mask][i]));
+            int pt_bin = hist->GetYaxis()->FindBin(pt[mask][i]);
+            int lasteta_bin = hist->GetXaxis()->FindBin(500);
+            int lastpt_bin = hist->GetYaxis()->FindBin(999.);
             if (std::abs(eta[i]) < 5) {
                 if (unc == "") {
                         if (pt[mask][i] > 1000.){
-                            weight *= hist->GetBinContent(lastpt_bin, eta_bin);
+                            weight *= hist->GetBinContent(eta_bin,lastpt_bin);
                         }
                         else{
-                            weight *= hist->GetBinContent(pt_bin, eta_bin);
+                            weight *= hist->GetBinContent(eta_bin,pt_bin);
                         }
                 } else if (unc == "Up") {
                         if (pt[mask][i] > 1000.){
-                            weight *= ( hist->GetBinContent(lastpt_bin,eta_bin) + hist_up->GetBinContent(lastpt_bin,eta_bin));
+                            weight *= ( hist->GetBinContent(eta_bin,lastpt_bin) + hist_up->GetBinContent(eta_bin,lastpt_bin));
                         }
                         else{
-                            weight *= ( hist->GetBinContent(pt_bin, eta_bin)
-                                        + hist_up->GetBinContent(pt_bin, eta_bin) );
+                            weight *= ( hist->GetBinContent(eta_bin,pt_bin)
+                                        + hist_up->GetBinContent( eta_bin,pt_bin) );
                         }
                 } else if (unc == "Down") {
                         if (pt[mask][i] > 1000.){
-                            weight *=  ( hist->GetBinContent(lastpt_bin, eta_bin) - hist_down->GetBinContent(lastpt_bin, eta_bin));
+                            weight *=  ( hist->GetBinContent( eta_bin,lastpt_bin) - hist_down->GetBinContent(eta_bin,lastpt_bin));
                         }
                         else{
-                            weight *= ( hist->GetBinContent(pt_bin, eta_bin)
-                                            - hist_down->GetBinContent(pt_bin, eta_bin) );
+                            weight *= ( hist->GetBinContent(eta_bin,pt_bin)
+                                            - hist_down->GetBinContent( eta_bin,pt_bin) );
                         }
                 }
             }
@@ -159,6 +159,7 @@ float dd_fakerate( const rvec<float>& tau_pt,
           if( tau_pt_value > 999.){
             tau_pt_value = 999.;
           }
+
           Int_t tauptbin = config::ff_hist_barrel_high->GetXaxis()->FindBin(tau_pt_value);
           Int_t tauptojetptbin = config::ff_hist_endcap_high->GetYaxis()->FindBin(tau_pt_over_jet_pt);
           FF  = config::ff_hist_endcap_high->GetBinContent(tauptbin,tauptojetptbin);

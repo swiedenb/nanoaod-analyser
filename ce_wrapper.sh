@@ -6,6 +6,9 @@ mkdir output
 mkdir output/2018
 mkdir output/2017
 mkdir output/2016
+mkdir output/2018/snapshots
+mkdir output/2017/snapshots
+mkdir output/2016/snapshots
 ./guent.her "$@" || { echo 'running music failed' ; exit 1; }
 
 tar cjf AnalysisOutput.tar.bz2 output/
