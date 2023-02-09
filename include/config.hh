@@ -53,13 +53,17 @@ namespace config {
     extern bool cut_single;
     
     extern bool TT;
+    extern bool doXY;
     extern bool WW;
     extern bool DY;
     extern bool runOnData;
     extern bool runOnSignal;
     extern bool wwuncertainty;
     extern bool runDataDriven;
+    extern bool use2017XY;
+    extern bool doSnapshot;
     extern bool calcDataDriven;
+    extern bool closure;
     extern int era;
 
     extern bool use_EEMET;
@@ -71,6 +75,19 @@ namespace config {
     extern TH2D* trigger_hist_up;
     extern TH2D* trigger_hist_down;
     extern TH2D* ff_hist;
+    extern TH2D* ff_hist_low;
+    extern TH2D* ff_hist_high;
+    extern TH2D* ff_hist_barrel_low;
+    extern TH2D* ff_hist_barrel_high;
+    extern TH2D* ff_hist_endcap_low;
+    extern TH2D* ff_hist_endcap_high;
+    extern TH2D* ff_closure_hist;
+    extern TH2D* ff_closure_hist_low;
+    extern TH2D* ff_closure_hist_high;
+    extern TH2D* ff_closure_hist_barrel_low;
+    extern TH2D* ff_closure_hist_barrel_high;
+    extern TH2D* ff_closure_hist_endcap_low;
+    extern TH2D* ff_closure_hist_endcap_high;
     extern TH2D* prefire_photon_hist;
     extern TH2D* prefire_jet_hist;
     
@@ -90,6 +107,7 @@ namespace config {
     extern EleSFTool* ele_SF;
 
     extern std::string pdf_set_name;
+    extern std::string pdf_prod_set_name;
     extern int pdf_nweights;
     extern int pdf_setid;
     extern bool pdf_is_initialized;

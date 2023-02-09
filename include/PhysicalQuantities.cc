@@ -3,8 +3,8 @@
 #include "TMatrixD.h"
 #include "TMatrixDEigen.h"
 #include "TMatrixDSymEigen.h"
-
 #include <math.h>
+#include "Math/LorentzVector.h"
 
 // Calculate sphericity from one particle class
 float sphericity(	const rvec<float>& part_pt, 
@@ -343,6 +343,45 @@ float sel_tau_pt(               const rvec<float>& tau_pt,
     return tau_pt[tau_mask][col_idx[0]];
 };
 // Calculate collinear mass from two highest pt particles, which fulfil mask and MET with the eta from the first particle
+float collinear_mass_mask(      const rvec<float>& p1_pt_vec,
+                                const rvec<float>& p2_pt_vec,
+                                const rvec<float>& p1_eta_vec,
+                                const rvec<float>& p2_eta_vec,
+                                const rvec<float>& p1_phi_vec,
+                                const rvec<float>& p2_phi_vec,
+                                const rvec<float>& p1_mass_vec,
+                                const rvec<float>& p2_mass_vec,
+                                const float& met_pt,
+                                const float& met_phi,
+                                const rvec<bool>& mask_1,
+                                const rvec<bool>& mask_2,
+                                const rvec<int>& idx){
+    TLorentzVector p1, p2, p3, p_best;
+    auto p1_pt = p1_pt_vec[mask_1][idx[0]];
+    auto p1_eta = p1_eta_vec[mask_1][idx[0]];
+    auto p1_phi = p1_phi_vec[mask_1][idx[0]];
+    auto p1_mass = p1_mass_vec[mask_1][idx[0]];
+    auto p2_pt = p2_pt_vec[mask_2][idx[1]];
+    auto p2_eta = p2_eta_vec[mask_2][idx[1]];
+    auto p2_phi = p2_phi_vec[mask_2][idx[1]];
+    auto p2_mass = p2_mass_vec[mask_2][idx[1]];
+    
+    p1.SetPtEtaPhiM(p1_pt, p1_eta, p1_phi, p1_mass);
+    p2.SetPtEtaPhiM(p2_pt, p2_eta, p2_phi, p2_mass);
+    p3.SetPtEtaPhiM(met_pt, 0., met_phi, 0.);
+	double METproj=(p3.Px()*p1.Px()+p3.Py()*p1.Py())/p1.Pt();
+	//if (METproj < 0) METproj = 0;
+	double xth=1;
+	if(METproj>0) xth=p1.Pt()/(p1.Pt()+METproj);
+	else xth = 1;
+	double mass_vis=(p1+p2).M();
+	double mcol = 0;
+	if (mass_vis != mass_vis) mass_vis=0;
+	if (mass_vis <= 0) mass_vis = 0;
+
+	mcol=mass_vis/sqrt(xth);
+	return mcol;
+};
 float collinear_mass(           const float& p1_pt,
                                 const float& p2_pt,
                                 const float& p1_eta,

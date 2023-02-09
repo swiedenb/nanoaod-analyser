@@ -15,6 +15,7 @@
 #include <ROOT/RDFHelpers.hxx>
 #include <ROOT/RVec.hxx>
 #include <math.h>
+#include <TRandom3.h>
 #include <TSystemDirectory.h>
 #include "TPRegexp.h"
 #include <variant>
@@ -41,6 +42,7 @@ std::multimap< std::string, std::variant< ROOT::RDF::RResultPtr<TH1D>, ROOT::RDF
 
 
 TString runName;
+TRandom3* gauss = new TRandom3();
 
 std::string met_branch_name = "MET";
 
@@ -154,6 +156,103 @@ void calc_tau_uncertainty ( RNode& df,
                         },
                         {"Tau_pt", "Tau_eta", "Tau_decayMode", "Tau_mask", "Tau_genPartFlav"});
 }
+rvec<float> muon_reso_smearing(
+                        const rvec<float>& pt,
+                        const rvec<float>& eta,
+                        const rvec<float>& phi,
+                        const rvec<float>& mass,
+                        const std::string& direction){
+          TLorentzVector muon;
+          rvec<float> pt_smeared;
+          if(!config::runOnData){
+              for( unsigned int i = 0; i < pt.size(); i++){
+                  muon.SetPtEtaPhiM(pt[i],eta[i],phi[i],mass[i]);
+                  auto sigma = 0.;
+                  auto p = muon.P();
+                  if(0. <= abs(eta[i]) < 1.2){
+                    if(config::era == 2016){
+                        sigma = 0.0062 + 0.0001*p - 1.0*pow(10,-7)*p*p + 5.7*pow(10,-11)*p*p*p - 1.1*pow(10,-14)*p*p*p*p;
+                    }
+                    else if(config::era == 2017){
+                        sigma = 0.0053 + 0.00011*p - 1.3*pow(10,-7)*p*p + 6.9*pow(10,-11)*p*p*p - 1.3*pow(10,-14)*p*p*p*p;
+                    }
+                    else if(config::era == 2018){
+                        sigma = 0.0062 + 0.000096*p - 9.7*pow(10,-8)*p*p + 4.9*pow(10,-11)*p*p*p - 9.*pow(10,-15)*p*p*p*p;
+                    }
+                  }
+                  else if(1.2 <= abs(eta[i]) < 2.1){
+                    if(config::era == 2016){
+                        sigma = 0.0134 + 0.000063*p - 4.7*pow(10,-8)*p*p + 2.6*pow(10,-11)*p*p*p - 5*pow(10,-15)*p*p*p*p;
+                    }
+                    else if(config::era == 2017){
+                        sigma = 0.0136 + 0.000063*p - 2.6*pow(10,-8)*p*p + 1.3*pow(10,-12)*p*p*p + 3.*pow(10,-15)*p*p*p*p;
+                    }
+                    else if(config::era == 2018){
+                        sigma = 0.0136 + 0.000052*p - 2.4*pow(10,-8)*p*p + 5.0*pow(10,-12)*p*p*p;
+                    }
+                  }
+                  else if(2.1 <= abs(eta[i]) < 2.4){
+                    if(config::era == 2016){
+                        sigma = 0.0151 + 0.000114*p - 3.7*pow(10,-8)*p*p - 3.9*pow(10,-12)*p*p*p + 1.*pow(10,-15)*p*p*p*p;
+                    }
+                    else if(config::era == 2017){
+                        sigma = 0.0170 + 0.000084*p - 2.6*pow(10,-9)*p*p - 2.3*pow(10,-11)*p*p*p + 8.*pow(10,-15)*p*p*p*p;
+                    }
+                    else if(config::era == 2018){
+                        sigma = 0.0174 + 0.000087*p - 3.3*pow(10,-9)*p*p - 1.6*pow(10,-11)*p*p*p + 5.*pow(10,-15)*p*p*p*p;
+                    }
+                  }
+                  auto p_new = p;
+                  if(abs(eta[i]) >= 1.2){
+                      p_new = p * ( 1 + gauss->Gaus(0,sigma * 0.57));
+                  }
+                  if(direction == "Up"){
+                    p_new = p * ( 1 + gauss->Gaus(0,sigma * 0.46));
+                  }
+                  else if(direction == "Down"){
+                    p_new = p * ( 1 - gauss->Gaus(0,sigma * 0.46));
+                  }
+                  auto pt_new = p_new * 1./cosh(eta[i]);
+                  pt_smeared.push_back(std::max(0.,pt_new));
+              
+              }
+          }
+          else {
+            pt_smeared = pt;
+          }
+          return pt_smeared;
+                        }
+bool jet_matching(
+                        const float& tau_pt,
+                        const float& tau_eta,
+                        const float& tau_phi,
+                        const float& tau_mass,
+                        const rvec<float>& jet_pt,
+                        const rvec<float>& jet_eta,
+                        const rvec<float>& jet_phi,
+                        const rvec<float>& jet_mass){
+          TLorentzVector tau;
+          TLorentzVector jet;
+          bool matched_jet = false;
+          tau.SetPtEtaPhiM(tau_pt,tau_eta,tau_phi, tau_mass);
+          for( unsigned int i = 0; i < jet_pt.size(); i++){
+            jet.SetPtEtaPhiM(jet_pt[i],jet_eta[i],jet_phi[i],jet_mass[i]);
+            if(tau.DeltaR(jet) < 0.2){
+                if(abs(jet_eta[i]) >= 2.5){
+                    continue;
+                }
+                else{
+                    matched_jet = true;
+                    break;
+                }
+            }
+            else{
+                continue;
+            }
+          }
+          return matched_jet;
+ }
+
 
 rvec<float> scale_correct_muon(
                         const rvec<float>& pt,
@@ -234,10 +333,11 @@ float correct_met(
 
                 }
                 else{
-                    float met_px = met_p4.Px() - muon_tune_p4.Px();
-                    float met_py = met_p4.Py() - muon_tune_p4.Py();
-                    float met_pt = sqrt(pow(met_px,2) + pow(met_py,2)); 
-                    met_p4.SetPxPyPzE(met_px,met_py,0,met_pt);
+                   continue;
+                   // float met_px = met_p4.Px() - muon_tune_p4.Px();
+                   // float met_py = met_p4.Py() - muon_tune_p4.Py();
+                   // float met_pt = sqrt(pow(met_px,2) + pow(met_py,2)); 
+                   // met_p4.SetPxPyPzE(met_px,met_py,0,met_pt);
                 }
             }
         }
@@ -279,10 +379,11 @@ float correct_met_phi(
 
                 }
                 else{
-                    float met_px = met_p4.Px() - muon_tune_p4.Px();
-                    float met_py = met_p4.Py() - muon_tune_p4.Py();
-                    float met_pt = sqrt(pow(met_px,2) + pow(met_py,2)); 
-                    met_p4.SetPxPyPzE(met_px,met_py,0,met_pt);
+                    //float met_px = met_p4.Px() - muon_tune_p4.Px();
+                    //float met_py = met_p4.Py() - muon_tune_p4.Py();
+                    //float met_pt = sqrt(pow(met_px,2) + pow(met_py,2)); 
+                    //met_p4.SetPxPyPzE(met_px,met_py,0,met_pt);
+                    continue;
                 }
             }
         }
@@ -334,7 +435,7 @@ bool dimuonpair_cut(const rvec<float>& pt,
                    const rvec<float>& eta,
                    const rvec<float>& phi,
                    const rvec<bool>& mask) {
-    if ( pt[mask].size()> 2){
+    if ( pt[mask].size()>= 2){
         for (uint i = 0; i<pt[mask].size(); i++){
             for( uint j = i + 1; j < pt[mask].size(); j++){
                double delphi = delta_phi(phi[mask][i],phi[mask][j]);
@@ -527,11 +628,13 @@ void create_preselection_hists(	RNode df) {
 	auto tau_phi = df.Histo1D(	{"Tau_phi", "", 		100u, -3.2, 3.2}, 								"Tau_phi_ES",               "presel_weight");
 	auto met_pt = df.Histo1D(	{"MET_pt", "MET_pt", 	6000u, 0, 6000}, 							    met_branch_name + "_pt",    "presel_weight");
 	auto met_phi = df.Histo1D(	{"MET_phi", "MET_phi", 	100u, -3.2, 3.2}, 					            met_branch_name + "_phi",   "presel_weight");
+	auto multiplicity = df.Histo1D(	{"multiplicity", "multiplicity", 	50u, 0., 50.}, 					           "multiplicity"   ,   "presel_weight");
 	hist_dict.emplace("Preselection", tau_pt);
 	hist_dict.emplace("Preselection", tau_eta);
 	hist_dict.emplace("Preselection", tau_phi);
 	hist_dict.emplace("Preselection", met_pt);
 	hist_dict.emplace("Preselection", met_phi);
+	hist_dict.emplace("Preselection", multiplicity);
 };
 // fill preselection histograms
 void fill_preselection(	RNode df) {
@@ -614,10 +717,19 @@ void create_datadriven_hists(	RNode df,
 	auto met_pt = df.Histo1D(	{((TString) "MET_pt" + stringcopy), "", 					6000u, 0, 6000}, met_branch_name + 	"_pt" + met_shift, 					weight_column);
 	auto met_phi = df.Histo1D(	{((TString) "MET_phi" + stringcopy), "", 					100u, -3.2, 3.2}, met_branch_name + "_phi" + met_shift, 					weight_column);
 	auto MT = df.Histo1D(		{((TString) "MT" + stringcopy), "", 						6000u, 0, 6000},		"MT", 						weight_column);
-	auto coll_mass = df.Histo1D({((TString) "CollMass" + stringcopy), "",					6000u, 0, 6000},		"CollMass",					weight_column);
+	auto coll_mass = df.Histo1D({((TString) "CollMass" + stringcopy), "",					10000u, 0, 10000},		"CollMass",					weight_column);
 	auto nvtx = df.Histo1D(		{((TString) "nvtx" + stringcopy), "", 					80u, 0, 80}, 			"PV_npvs", 					weight_column);
 	auto njets = df.Histo1D(		{((TString) "nJets" + stringcopy), "", 					40u, 0, 40}, 			"nJet", 					weight_column);
 	auto nvtxgood = df.Histo1D(	{((TString) "nvtx_good" + stringcopy), "", 				80u, 0, 80}, 			"PV_npvsGood", 				weight_column);
+    if( !config::runOnData){
+        df = df.Define("no_pileupweight","total_weight / pileup_weight");
+        auto nvtxgood_nopu = df.Histo1D(	{((TString) "nvtx_good_nopu" + stringcopy), "", 				80u, 0, 80}, 			"PV_npvsGood", 				"no_pileupweight");
+        hist_dict.emplace(name, nvtxgood_nopu);
+    }
+    else{
+        auto nvtxgood_nopu = df.Histo1D(	{((TString) "nvtx_good_nopu" + stringcopy), "", 				80u, 0, 80}, 			"PV_npvsGood", 			weight_column);
+        hist_dict.emplace(name, nvtxgood_nopu);
+    }
 	//hist_dict.emplace(name, tau_genpartflav);
 	hist_dict.emplace(name, tau_pt_ov_jet_pt_2d);
 	hist_dict.emplace(name, tau_pt_ov_jet_pt_2d_barrel);
@@ -657,7 +769,7 @@ void create_fr_hists(	RNode df,
 	auto met_pt = df.Histo1D(	{((TString) "MET_pt" + stringcopy), "", 					6000u, 0, 6000}, met_branch_name + 	"_pt" , 					weight_column);
 	auto met_phi = df.Histo1D(	{((TString) "MET_phi" + stringcopy), "", 					100u, -3.2, 3.2}, met_branch_name + "_phi", 					weight_column);
 	auto MT = df.Histo1D(		{((TString) "MT" + stringcopy), "", 						6000u, 0, 6000},		"MT", 						weight_column);
-	auto coll_mass = df.Histo1D({((TString) "CollMass" + stringcopy), "",					6000u, 0, 6000},		"CollMass",					weight_column);
+	auto coll_mass = df.Histo1D({((TString) "CollMass" + stringcopy), "",					10000u, 0, 10000},		"CollMass",					weight_column);
 	auto nvtx = df.Histo1D(		{((TString) "nvtx" + stringcopy), "", 					80u, 0, 80}, 			"PV_npvs", 					weight_column);
 	auto njets = df.Histo1D(		{((TString) "nJets" + stringcopy), "", 					40u, 0, 40}, 			"nJet", 					weight_column);
 	auto nvtxgood = df.Histo1D(	{((TString) "nvtx_good" + stringcopy), "", 				80u, 0, 80}, 			"PV_npvsGood", 				weight_column);
@@ -697,9 +809,11 @@ void create_gen_hists( RNode df,
                        std::string name
 					   ) {
     auto coll_mass_gen = df.Histo1D({((TString) "CollMass_gen" ), "",					6000u, 0, 6000},		"CollMass_gen",					"genWeight");
+    auto coll_mass_gen_sel = df.Histo1D({((TString) "CollMass_gen_sel" ), "",					6000u, 0, 6000},		"CollMass_gen_sel",					"genWeight");
    // auto tau_pdgid = df.Histo1D({((TString) "sel_Tau_pdgId" ), "",					100, -50, 50},		"sel_Tau_pdgId",					"genWeight");
    // auto tau_genpt = df.Histo1D({((TString) "sel_Tau_genPt" ), "",					3000u, 0, 3000},		"sel_Tau_genPt",					"genWeight");
     hist_dict.emplace(name, coll_mass_gen);
+    hist_dict.emplace(name, coll_mass_gen_sel);
    // hist_dict.emplace("Generation", tau_pdgid);
    // hist_dict.emplace("Generation", tau_genpt);
 }
@@ -724,13 +838,16 @@ void create_hists(	RNode df,
 					std::string met_shift,
                     std::string weight_column) {
     std::string stringcopy = weight_column + muon_shift + tau_shift + met_shift;
-    if (tau_shift == "_ES" && (met_shift == "_jer" || met_shift == "_nom") && muon_shift == "") {
+    //if (tau_shift == "_ES" && (met_shift == "_jer" || met_shift == "_nom") && muon_shift == "") {
+    if (tau_shift == "_ES" && (met_shift == "_jer" || met_shift == "_nom" || met_shift == "") && muon_shift == "") {
         stringcopy = weight_column;
     }
-    else if(tau_shift == "_ES" && (met_shift == "_jer" || met_shift == "_nom") && muon_shift != ""){
+    //else if(tau_shift == "_ES" && (met_shift == "_jer" || met_shift == "_nom") && muon_shift != ""){
+    else if(tau_shift == "_ES" && (met_shift == "_jer" || met_shift == "_nom" || met_shift == "") && muon_shift != ""){
         stringcopy = weight_column + muon_shift;
     }
     stringcopy.erase(0,12);
+    std::string nopuweight = weight_column + "/ pileup_weight";
     //if( !config::runOnData){
 	//    auto gentau_pt = df.Histo1D(	{((TString) "GenVisTau_pt" + stringcopy), "", 			6000u, 0, 6000}, 					"GenVisTau_pt",     weight_column);
 	//    hist_dict.emplace(name, gentau_pt);
@@ -748,12 +865,23 @@ void create_hists(	RNode df,
 	auto muon_phi = df.Histo1D(	{((TString) "Muon_phi" + stringcopy), "", 				100u, -3.2, 3.2}, 		"sel_Muon_phi", 			weight_column);
 	auto met_pt = df.Histo1D(	{((TString) "MET_pt" + stringcopy), "", 					6000u, 0, 6000}, met_branch_name  + "_pt" + met_shift, 					weight_column);
 	auto met_phi = df.Histo1D(	{((TString) "MET_phi" + stringcopy), "", 					100u, -3.2, 3.2}, 		met_branch_name + "_phi" + met_shift, 					weight_column);
+	auto met_pt_uncorrected = df.Histo1D(	{((TString) "MET_pt_uncorrected" + stringcopy), "", 					6000u, 0, 6000}, "MET_pt", 					weight_column);
+	auto met_phi_uncorrected = df.Histo1D(	{((TString) "MET_phi_uncorrected" + stringcopy), "", 					100u, -3.2, 3.2}, 		"MET_phi", 					weight_column);
 	auto MT = df.Histo1D(		{((TString) "MT" + stringcopy), "", 						6000u, 0, 6000},		"MT", 						weight_column);
-	auto coll_mass = df.Histo1D({((TString) "CollMass" + stringcopy), "",					6000u, 0, 6000},		"CollMass",					weight_column);
-	auto coll_mass_alt = df.Histo1D({((TString) "CollMass_alt" + stringcopy), "",					6000u, 0, 6000},		"CollMass_alt",					weight_column);
+	auto coll_mass = df.Histo1D({((TString) "CollMass" + stringcopy), "",					10000u, 0, 10000},		"CollMass",					weight_column);
 	auto nvtx = df.Histo1D(		{((TString) "nvtx" + stringcopy), "", 					80u, 0, 80}, 			"PV_npvs", 					weight_column);
 	auto njets = df.Histo1D(		{((TString) "nJets" + stringcopy), "", 					40u, 0, 40}, 			"nJet", 					weight_column);
+    if( !config::runOnData){
+        df = df.Define("no_pileupweight","total_weight / pileup_weight");
+        auto nvtxgood_nopu = df.Histo1D(	{((TString) "nvtx_good_nopu" + stringcopy), "", 				80u, 0, 80}, 			"PV_npvsGood", 				"no_pileupweight");
+        hist_dict.emplace(name, nvtxgood_nopu);
+    }
+    else{
+        auto nvtxgood_nopu = df.Histo1D(	{((TString) "nvtx_good_nopu" + stringcopy), "", 				80u, 0, 80}, 			"PV_npvsGood", 			weight_column);
+        hist_dict.emplace(name, nvtxgood_nopu);
+    }
 	auto nvtxgood = df.Histo1D(	{((TString) "nvtx_good" + stringcopy), "", 				80u, 0, 80}, 			"PV_npvsGood", 				weight_column);
+	auto multiplicity = df.Histo1D(	{((TString) "multiplicity" + stringcopy), "", 				30u, 0, 30}, 			"multiplicity", 				weight_column);
 	//hist_dict.emplace(name, tau_genpartflav);
 	hist_dict.emplace(name, njets);
 	hist_dict.emplace(name, tau_pt);
@@ -766,11 +894,13 @@ void create_hists(	RNode df,
 	hist_dict.emplace(name, muon_phi);
 	hist_dict.emplace(name, met_pt);
 	hist_dict.emplace(name, met_phi);
+	hist_dict.emplace(name, met_pt_uncorrected);
+	hist_dict.emplace(name, met_phi_uncorrected);
 	hist_dict.emplace(name, MT);
 	hist_dict.emplace(name, coll_mass);
-	hist_dict.emplace(name, coll_mass_alt);
 	hist_dict.emplace(name, nvtx);
 	hist_dict.emplace(name, nvtxgood);
+	hist_dict.emplace(name, multiplicity);
 	hist_dict.emplace(name, sphericity);
 	hist_dict.emplace(name, sphericity_leptons);
 };
@@ -810,11 +940,17 @@ void fill_stage_with_syst(  RNode df,
         auto split_false = df.Filter([](const float & genPartFlav){
             return (genPartFlav == 0);
         }, {"sel_Tau_genPartFlav"});
+
+        auto split_genIdx = df.Filter([](const int & genIdx,
+                                         const float & genPartFlav){
+            return (genIdx == -1) and !(genPartFlav == 0);
+        }, {"sel_Muon_genIdx", "sel_Tau_genPartFlav"});
         
         if (default_run) {                           
             for (const auto& it : list_of_weights) {
                 std::string folder_name_tau = stage_name;
                 std::string folder_name_notau = stage_name + "_inv";
+                std::string folder_name_nofakes = stage_name + "_nofakes";
                 if ( it.find("total_weight_") != std::string::npos ) {
                     folder_name_tau += "/Systematics";
                     folder_name_notau += "/Systematics";
@@ -825,6 +961,7 @@ void fill_stage_with_syst(  RNode df,
                 }
                 create_hists(split_true, folder_name_tau, muon_shift, tau_shift, met_shift, it);
                 create_hists(split_false, folder_name_notau, muon_shift, tau_shift, met_shift, it);
+                create_hists(split_genIdx, folder_name_nofakes, muon_shift, tau_shift, met_shift, it);
             }
         } else {
             std::string folder_name_tau = stage_name + "/Systematics";
@@ -997,7 +1134,7 @@ RNode calc_datadriven(RNode df,
         //return tau_pt/jet_pt[jetidx];                                             
 //    },
   //                  {"sel_Tau_pt","sel_Tau_jetIdx","Jet_pt"});
-    auto df_coll = mtcalc.Define("CollMass", collinear_mass, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("CollMass_alt", collinear_mass_alt, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("Tau_pt_over_Jet_pt", tau_pt_over_jet_pt,{"col_idx","Tau_pt" + tau_shift,"Tau_jetIdx","Jet_pt","NonIso_Tau"}).Define("Tau_pt_over_Jet_pt_barrel", tau_pt_over_jet_pt_barrel,{"col_idx","Tau_pt" + tau_shift, "Tau_jetIdx", "Jet_pt", "NonIso_Tau", "Tau_eta" + tau_shift}).Define("Tau_pt_over_Jet_pt_endcap", tau_pt_over_jet_pt_endcap,{"col_idx", "Tau_pt" + tau_shift, "Tau_jetIdx", "Jet_pt", "NonIso_Tau", "Tau_eta" + tau_shift});
+    auto df_coll = mtcalc.Define("CollMass", collinear_mass, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("CollMass_alt", collinear_mass_alt, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("Tau_pt_over_Jet_pt", tau_pt_over_jet_pt,{"col_idx","Tau_pt" + tau_shift,"Tau_jetIdx","Jet_pt_nom","NonIso_Tau"}).Define("Tau_pt_over_Jet_pt_barrel", tau_pt_over_jet_pt_barrel,{"col_idx","Tau_pt" + tau_shift, "Tau_jetIdx", "Jet_pt_nom", "NonIso_Tau", "Tau_eta" + tau_shift}).Define("Tau_pt_over_Jet_pt_endcap", tau_pt_over_jet_pt_endcap,{"col_idx", "Tau_pt" + tau_shift, "Tau_jetIdx", "Jet_pt_nom", "NonIso_Tau", "Tau_eta" + tau_shift});
     RNode total_weights = df_coll;
     std::vector < std::string > list_of_weights;
 
@@ -1065,24 +1202,24 @@ RNode calc_datadriven(RNode df,
                                                                      return muon_id_scale_factor(muon_pt, muon_eta, muon_mask, "Down");
                                                                   }, {"Muon_pt_corr", "Muon_eta", "Muon_mask"})
                                  .Define("WWshape", [](){ return (float) 1.;})
-                                 .Define("WWshapeUp", []( const float& coll_mass
+                                 .Define("WWshapeUp", []( const float& mll
                                                                   )
                                                                   {
                                                                      if (config::wwuncertainty){
-                                                                         float weight = 1 + 1 - (0.993-0.00002001 * coll_mass + 0.00000000283 * coll_mass * coll_mass);
+                                                                         float weight = 1 + 1 - (0.993-0.00002001 * mll + 0.00000000283 * mll * mll);
                                                                          return weight ;
                                                                      }
                                                                      return (float) 1.;
-                                                                  }, {"CollMass_alt"})
-                                 .Define("WWshapeDown", []( const float& coll_mass
+                                                                  }, {"Mll"})
+                                 .Define("WWshapeDown", []( const float& mll
                                                                   )
                                                                   {
                                                                      if (config::wwuncertainty){
-                                                                         float weight = (0.993-0.00002001 * coll_mass + 0.00000000283 * coll_mass * coll_mass);
+                                                                         float weight = (0.993-0.00002001 * mll + 0.00000000283 * mll * mll);
                                                                          return weight;
                                                                      }
                                                                      return (float) 1.;
-                                                                  }, {"CollMass_alt"})
+                                                                  }, {"Mll"})
                                  .Define("TopQ", []( const float& Mll
                                                                   )
                                                                   {
@@ -1159,8 +1296,8 @@ RNode calc_datadriven(RNode df,
                                                             }, {"Muon_pt_corr", "Muon_eta", "Muon_phi", "Muon_mass", "Muon_mask"});
     //define_weight(total_weights, default_weights, list_of_weights);
             //DEFINE NON-ENERGY RELATED UNCERTAINTIES
-            total_weights = total_weights.Define("pileup_weightUp", [](const float& nvtx_true){ return pu_weight(nvtx_true, "Up"); }, {"Pileup_nTrueInt"})
-                                         .Define("pileup_weightDown", [](const float& nvtx_true){ return pu_weight(nvtx_true, "Down"); }, {"Pileup_nTrueInt"})
+            total_weights = total_weights.Define("pileup_weightUp", [](const int& nvtx_true){ return pu_weight(nvtx_true, "Up"); }, {"Pileup_nPU"})
+                                         .Define("pileup_weightDown", [](const int& nvtx_true){ return pu_weight(nvtx_true, "Down"); }, {"Pileup_nPU"})
                                          .Define("prefiring_weight_Up", [](const rvec<float>& jet_pt,
                                                                  const rvec<float>& jet_eta,
                                                                  const rvec<float>& photon_pt,
@@ -1197,33 +1334,57 @@ RNode calc_datadriven(RNode df,
             std::vector<std::string> columnNames = total_weights.GetColumnNames();
             if (std::find(columnNames.begin(), columnNames.end(), "LHEScaleWeight") != columnNames.end()) {
                 total_weights = total_weights.Define("total_weight_ScaleWeightUp", [](const rvec<float>& weights, const float& tot_weight) {
-                                                                                                    if (weights.size() == 0)
-                                                                                                        return (float) 1.0;
-                                                                                                    float max_val = *std::max_element(weights.begin(), weights.end());
+                                                                                                    float max_val = 1.0;
+                                                                                                    for (uint i = 0; i < weights.size(); i++) {
+                                                                                                        if ((i==5) || (i==7)) {
+                                                                                                            continue;
+                                                                                                        }
+                                                                                                        if (max_val < weights[i]) {
+                                                                                                            max_val = weights[i];
+                                                                                                        }
+                                                                                                    }
                                                                                                     return max_val*tot_weight;
                                                                                     }, {"LHEScaleWeight", "total_weight"})
                                                                             .Define("total_weight_ScaleWeightDown", [](const rvec<float>& weights, const float& tot_weight) {
-                                                                                                    if (weights.size() == 0)
-                                                                                                        return (float) 1.0;
-                                                                                                    float min_val = *std::min_element(weights.begin(), weights.end());
+                                                                                                    float min_val = 1.0;
+                                                                                                    for (uint i = 0; i < weights.size(); i++) {
+                                                                                                        if ((i==5) || (i==7)) {
+                                                                                                            continue;
+                                                                                                        }
+                                                                                                        if (min_val > weights[i]) {
+                                                                                                            min_val = weights[i];
+                                                                                                        }
+                                                                                                    }
                                                                                                     return min_val*tot_weight;
                                                                                     }, {"LHEScaleWeight", "total_weight"});
-                list_of_weights.push_back("total_weight_ScaleWeightUp");
-                list_of_weights.push_back("total_weight_ScaleWeightDown");
+                
+            } else {
+                total_weights = total_weights.Define("total_weight_ScaleWeightUp", "total_weight")
+                                             .Define("total_weight_ScaleWeightDown", "total_weight");
             }
-            
+            list_of_weights.push_back("total_weight_ScaleWeightUp");
+            list_of_weights.push_back("total_weight_ScaleWeightDown");
             // pdf weights
             std::vector<std::string> colNames = total_weights.GetColumnNames();
-            if (std::find(colNames.begin(), colNames.end(), "LHEPdfWeight") != colNames.end()) {
-                for (uint i = 1; i < config::pdf_nweights; i++) {
-                    total_weights = total_weights.Define("total_weight_pdf_weight_" + std::to_string(i), [i](const float& weight, const rvec<float>& pdf_weights)
-                        {
-                            if (pdf_weights.size() != config::pdf_nweights) {
-                                return weight;
-                            }
-                            return weight*pdf_weights[i]/pdf_weights[0];
-                        }, {"total_weight", "LHEPdfWeight"});
-                    list_of_weights.push_back("total_weight_pdf_weight_" + std::to_string(i));
+            if (std::find(colNames.begin(), colNames.end(), "LHEPdfWeight_def") != colNames.end()) {
+                if (!config::runOnSignal) {
+                    if (std::find(colNames.begin(), colNames.end(), "LHEWeight_originalXWGTUP") == colNames.end()) {
+                        total_weights = total_weights.Define("LHEWeight_originalXWGTUP", [](const rvec<float>& pdf_weights){return pdf_weights[0];}, {"LHEPdfWeight_def"});
+                    }
+                    for (uint i = 0; i < config::pdf_nweights; i++) {
+                        total_weights = total_weights.Define("total_weight_pdf_weight_" + std::to_string(i), [i](
+                                const float& weight, 
+                                const rvec<float>& pdf_weights, 
+                                const float& orig_weight)
+                            {
+                                if (pdf_weights.size() != config::pdf_nweights) {
+                                    return weight;
+                                }
+                                //~ return weight*pdf_weights[i]/orig_weight;
+                                return weight*pdf_weights[i]/pdf_weights[0];
+                            }, {"total_weight", "LHEPdfWeight_def", "LHEWeight_originalXWGTUP"});
+                        list_of_weights.push_back("total_weight_pdf_weight_" + std::to_string(i));
+                    }
                 }
             }
         }
@@ -1252,7 +1413,7 @@ RNode calc_datadriven(RNode df,
 //        return tau_pt/jet_pt[jetidx];                                             
   //  },
     //                {"sel_Tau_pt","sel_Tau_jetIdx","Jet_pt"});
-    auto df_coll_iso = mtcalc_iso.Define("CollMass", collinear_mass, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("CollMass_alt", collinear_mass_alt, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("Tau_pt_over_Jet_pt", tau_pt_over_jet_pt,{"col_idx","Tau_pt" + tau_shift,"Tau_jetIdx","Jet_pt","Iso_Tau"}).Define("Tau_pt_over_Jet_pt_endcap", tau_pt_over_jet_pt_endcap,{"col_idx","Tau_pt" + tau_shift, "Tau_jetIdx", "Jet_pt", "Iso_Tau", "Tau_eta" + tau_shift}).Define("Tau_pt_over_Jet_pt_barrel", tau_pt_over_jet_pt_barrel,{"col_idx","Tau_pt" + tau_shift, "Tau_jetIdx", "Jet_pt", "Iso_Tau", "Tau_eta" + tau_shift});  
+    auto df_coll_iso = mtcalc_iso.Define("CollMass", collinear_mass, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("CollMass_alt", collinear_mass_alt, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("Tau_pt_over_Jet_pt", tau_pt_over_jet_pt,{"col_idx","Tau_pt" + tau_shift,"Tau_jetIdx","Jet_pt_nom","Iso_Tau"}).Define("Tau_pt_over_Jet_pt_endcap", tau_pt_over_jet_pt_endcap,{"col_idx","Tau_pt" + tau_shift, "Tau_jetIdx", "Jet_pt_nom", "Iso_Tau", "Tau_eta" + tau_shift}).Define("Tau_pt_over_Jet_pt_barrel", tau_pt_over_jet_pt_barrel,{"col_idx","Tau_pt" + tau_shift, "Tau_jetIdx", "Jet_pt_nom", "Iso_Tau", "Tau_eta" + tau_shift});  
 	RNode total_weights_iso = df_coll_iso;
     std::vector < std::string > list_of_weights_iso;
 
@@ -1417,8 +1578,8 @@ total_weights_iso = total_weights_iso.Define("MuonISOScaleFactor", [](const rvec
         //define_weight(total_weights_iso, default_weights_iso, list_of_weights_iso);
 
         //DEFINE NON-ENERGY RELATED UNCERTAINTIES
-        total_weights_iso = total_weights_iso.Define("pileup_weightUp", [](const float& nvtx_true){ return pu_weight(nvtx_true, "Up"); }, {"Pileup_nTrueInt"})
-                                     .Define("pileup_weightDown", [](const float& nvtx_true){ return pu_weight(nvtx_true, "Down"); }, {"Pileup_nTrueInt"})
+        total_weights_iso = total_weights_iso.Define("pileup_weightUp", [](const int& nvtx_true){ return pu_weight(nvtx_true, "Up"); }, {"Pileup_nPU"})
+                                     .Define("pileup_weightDown", [](const int& nvtx_true){ return pu_weight(nvtx_true, "Down"); }, {"Pileup_nPU"})
                                      .Define("prefiring_weight_Up", [](const rvec<float>& jet_pt,
                                                              const rvec<float>& jet_eta,
                                                              const rvec<float>& photon_pt,
@@ -1471,7 +1632,7 @@ total_weights_iso = total_weights_iso.Define("MuonISOScaleFactor", [](const rvec
         
         // pdf weights
         std::vector<std::string> colNames_iso = total_weights_iso.GetColumnNames();
-        if (std::find(colNames_iso.begin(), colNames_iso.end(), "LHEPdfWeight") != colNames_iso.end()) {
+        if (std::find(colNames_iso.begin(), colNames_iso.end(), "LHEPdfWeight_def") != colNames_iso.end()) {
             for (uint i = 1; i < config::pdf_nweights; i++) {
                 total_weights_iso = total_weights_iso.Define("total_weight_pdf_weight_" + std::to_string(i), [i](const float& weight, const rvec<float>& pdf_weights)
                     {
@@ -1479,7 +1640,7 @@ total_weights_iso = total_weights_iso.Define("MuonISOScaleFactor", [](const rvec
                             return weight;
                         }
                         return weight*pdf_weights[i]/pdf_weights[0];
-                    }, {"total_weight", "LHEPdfWeight"});
+                    }, {"total_weight", "LHEPdfWeight_def"});
                 list_of_weights_iso.push_back("total_weight_pdf_weight_" + std::to_string(i));
             }
         }
@@ -1593,7 +1754,7 @@ RNode apply_datadriven(RNode df, std::string muon_shift, std::string tau_shift, 
     auto dimuon_cut_noniso = defquants_noniso.Filter(dimuonpair_cut,{"Muon_pt_corr" + muon_shift,"Muon_eta","Muon_phi", "DiMuon_mask"},"Di Muon Pair Cut");
     auto delR_cut_noniso = dimuon_cut_noniso.Filter(mutaudelR_cut,{"sel_Muon_eta","sel_Muon_phi", "sel_Tau_eta", "sel_Tau_phi"},"Mu Tau Del R Cut");
 	auto mtcalc_noniso = delR_cut_noniso.Define("MT", mass_transv, {"sel_Muon_pt", "sel_Muon_phi", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift});//.Define("sel_Tau_pt_ov_Jet_pt_Iso", [](const rvec<float> tau_pt, 
-    auto df_coll_noniso = mtcalc_noniso.Define("CollMass", collinear_mass, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("CollMass_alt", collinear_mass_alt, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("Tau_pt_over_Jet_pt", tau_pt_over_jet_pt,{"col_idx","Tau_pt" + tau_shift,"Tau_jetIdx","Jet_pt","NonIso_Tau"}).Define("Tau_pt_over_Jet_pt_barrel", tau_pt_over_jet_pt_barrel,{"col_idx","Tau_pt" + tau_shift, "Tau_jetIdx","Jet_pt","NonIso_Tau","Tau_eta" + tau_shift}).Define("Tau_pt_over_Jet_pt_endcap", tau_pt_over_jet_pt_endcap,{"col_idx","Tau_pt" + tau_shift, "Tau_jetIdx", "Jet_pt", "NonIso_Tau", "Tau_eta" + tau_shift});  
+    auto df_coll_noniso = mtcalc_noniso.Define("CollMass", collinear_mass, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("CollMass_alt", collinear_mass_alt, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("Tau_pt_over_Jet_pt", tau_pt_over_jet_pt,{"col_idx","Tau_pt" + tau_shift,"Tau_jetIdx","Jet_pt_nom","NonIso_Tau"}).Define("Tau_pt_over_Jet_pt_barrel", tau_pt_over_jet_pt_barrel,{"col_idx","Tau_pt" + tau_shift, "Tau_jetIdx","Jet_pt_nom","NonIso_Tau","Tau_eta" + tau_shift}).Define("Tau_pt_over_Jet_pt_endcap", tau_pt_over_jet_pt_endcap,{"col_idx","Tau_pt" + tau_shift, "Tau_jetIdx", "Jet_pt_nom", "NonIso_Tau", "Tau_eta" + tau_shift});  
 	RNode total_weights_noniso = df_coll_noniso;
     std::vector < std::string > list_of_weights_noniso;
     if (config::runOnData) {
@@ -1679,17 +1840,17 @@ RNode apply_datadriven(RNode df, std::string muon_shift, std::string tau_shift, 
                                                         }, {"Muon_pt_corr", "Muon_eta", "Muon_phi", "Muon_mass", "Muon_mask"});
         define_weight(total_weights_noniso, default_weights_noniso, list_of_weights_noniso);
         }
-	auto df_mt_noniso = total_weights_noniso.Filter("MT < 120.", "mt_cut").Define("Sphericity",sphericity_full,{"Tau_pt","Tau_eta","Tau_phi","Tau_mass","Muon_pt_corr" + muon_shift,"Muon_eta","Muon_phi","Muon_mass","Jet_pt","Jet_eta", "Jet_phi", "Jet_mass","NonIso_Tau", "Muon_mask"}).Define("Sphericity_leptons",sphericity_leptons,{"Tau_pt","Tau_eta","Tau_phi","Tau_mass","Muon_pt_corr" + muon_shift,"Muon_eta","Muon_phi","Muon_mass","NonIso_Tau", "Muon_mask"});
-	auto df_mt_signal_noniso = total_weights_noniso.Filter("MT > 120.", "mt_cut").Define("Sphericity",sphericity_full,{"Tau_pt","Tau_eta","Tau_phi","Tau_mass","Muon_pt_corr" + muon_shift,"Muon_eta","Muon_phi","Muon_mass","Jet_pt","Jet_eta", "Jet_phi", "Jet_mass","NonIso_Tau", "Muon_mask"}).Define("Sphericity_leptons",sphericity_leptons,{"Tau_pt","Tau_eta","Tau_phi","Tau_mass","Muon_pt_corr" + muon_shift,"Muon_eta","Muon_phi","Muon_mass","NonIso_Tau", "Muon_mask"});
+	auto df_mt_noniso = total_weights_noniso.Filter("MT < 120.", "mt_cut").Define("Sphericity",sphericity_full,{"Tau_pt","Tau_eta","Tau_phi","Tau_mass","Muon_pt_corr" + muon_shift,"Muon_eta","Muon_phi","Muon_mass","Jet_pt_nom","Jet_eta", "Jet_phi", "Jet_mass","NonIso_Tau", "Muon_mask"}).Define("Sphericity_leptons",sphericity_leptons,{"Tau_pt","Tau_eta","Tau_phi","Tau_mass","Muon_pt_corr" + muon_shift,"Muon_eta","Muon_phi","Muon_mass","NonIso_Tau", "Muon_mask"});
+	auto df_mt_signal_noniso = total_weights_noniso.Filter("MT > 120.", "mt_cut").Define("Sphericity",sphericity_full,{"Tau_pt","Tau_eta","Tau_phi","Tau_mass","Muon_pt_corr" + muon_shift,"Muon_eta","Muon_phi","Muon_mass","Jet_pt_nom","Jet_eta", "Jet_phi", "Jet_mass","NonIso_Tau", "Muon_mask"}).Define("Sphericity_leptons",sphericity_leptons,{"Tau_pt","Tau_eta","Tau_phi","Tau_mass","Muon_pt_corr" + muon_shift,"Muon_eta","Muon_phi","Muon_mass","NonIso_Tau", "Muon_mask"});
     if (config::runOnData){
         create_datadriven_hists(df_mt_signal_noniso, "Fakes_SignalRegion", muon_shift, tau_shift, met_shift, "total_weight");
     }
     if (not config::runOnData){
         auto df_mc_tau_veto_signal_noniso = df_mt_signal_noniso.Filter([](const rvec<int> col_idx, const rvec<UChar_t> genpartflav, const rvec<bool> tau_mask){
-            if (genpartflav[tau_mask][col_idx[0]] == 0) return false;
+            if (genpartflav[tau_mask][col_idx[0]] != 0) return false;
             else return true;}, {"col_idx", "Tau_genPartFlav", "NonIso_Tau"},"Data Driven MC real Tau veto");
         auto df_mc_no_fake_signal_noniso = df_mt_signal_noniso.Filter([](const rvec<int> col_idx, const rvec<UChar_t> genpartflav, const rvec<bool> tau_mask){
-            if (genpartflav[tau_mask][col_idx[0]] != 0) return false;
+            if (genpartflav[tau_mask][col_idx[0]] == 0) return false;
             else return true;}, {"col_idx", "Tau_genPartFlav", "NonIso_Tau"},"Data Driven MC real Tau veto");
 	    //create_datadriven_hists(df_mc_tau_veto_signal_noniso, "Fakes_SignalRegion_MC", muon_shift, tau_shift, met_shift,"total_weight");
 	    //create_datadriven_hists(df_mt_signal_noniso, "Fakes_SignalRegion_MC", muon_shift, tau_shift, met_shift,"total_weight");
@@ -1826,23 +1987,26 @@ RNode run_analyser(  RNode df,
     // should only happen on default run (non scale systs and others)
     bool default_run = (tau_shift == "_ES" && (met_shift == "_jer" || met_shift == "_nom") && muon_shift == "");
 
+   // if (met_shift == "_nom"){
+   //     met_shift = "";
+   // }
+
 	// init counter
 //	auto genWeightSum = df.Sum("genWeight");
 //  auto eventcounter = df.Count();
     
 	// Select trigger requirements
-	auto triggered = trigger(df,default_run);
 								
 	// Trigger turn on cut
 	//auto trigger_obj1 = met_filter.Filter("Muon_pt > " + std::to_string(config::muon_pt), "Avoid trigger turn on with muon object, pT>" + std::to_string(config::muon_pt));
 	
 
-    auto preselection = triggered;
+    auto preselection = df;
     if (config::runOnData) {
         preselection = preselection.Define("presel_weight", "1.0");
     } else {
         // calculate pileup weight
-        preselection = preselection.Define("pileup_weight", [](const float& nvtx_true){ return pu_weight(nvtx_true, ""); }, {"Pileup_nTrueInt"})
+        preselection = preselection.Define("pileup_weight", [](const int& nvtx_true){ return pu_weight(nvtx_true, ""); }, {"Pileup_nPU"})
                                    .Define("PrefiringWeight", [](const rvec<float>& jet_pt,
                                                                      const rvec<float>& jet_eta,
                                                                      const rvec<float>& photon_pt,
@@ -1852,10 +2016,11 @@ RNode run_analyser(  RNode df,
         preselection = preselection.Define("W_kfactor", get_kfactor, {"GenPart_pdgId", "GenPart_mass"});
         preselection = preselection.Define("presel_weight", "pileup_weight*PrefiringWeight*W_kfactor*genWeight");
     }
+	auto triggered = trigger(preselection,default_run);
 	
 	
 	// creates mask, which fills bool tags for taus which fulfil id and are in acceptance
-	auto masked = preselection.Define("Tau_mask", tau_acceptance_and_id_and_dm, {"Tau_pt" + tau_shift, "Tau_eta" + tau_shift, "Tau_dz", "Tau_charge", config::tau_dm, "Tau_decayMode", "Tau_jetIdx", config::tau_iso, config::tau_antiEle, config::tau_antiMuon})
+	auto masked = triggered.Define("Tau_mask", tau_acceptance_and_id_and_dm, {"Tau_pt" + tau_shift, "Tau_eta" + tau_shift, "Tau_dz", "Tau_charge", config::tau_dm, "Tau_decayMode", "Tau_jetIdx", config::tau_iso, config::tau_antiEle, config::tau_antiMuon})
 							  .Define("Muon_mask", muon_acceptance_and_id, {"Muon_pt_corr" + muon_shift, "Muon_eta", "Muon_isPFcand", "Muon_highPtId", "Muon_tkIsoId"})
 							  .Define("DiMuon_mask", di_muon_id, {"Muon_pt_corr" + muon_shift, "Muon_eta", "Muon_highPtId", "Muon_tkRelIso"})
 							  .Define("Electron_mask", ele_acceptance_and_simpleid, {"Electron_pt", "Electron_eta", "Electron_cutBased_HEEP"});
@@ -1958,6 +2123,46 @@ RNode run_analyser(  RNode df,
 
                                  
                                  },{"GenVisTau_pt","GenVisTau_eta","GenVisTau_phi","GenVisTau_mass","sel_Tau_genPartFlav", "GenPart_pt","GenPart_eta","GenPart_phi","GenPart_mass","sel_Tau_genIdx", "sel_Tau_genVisIdx","sel_Muon_genIdx","GenMET_pt","GenMET_phi"})
+                                           .Define("CollMass_gen_sel", [](const rvec<float>& genpt,
+                                                                        const rvec<float>& geneta, 
+                                                                        const rvec<float>& genphi, 
+                                                                        const rvec<float>& genmass, 
+                                                                        const rvec<int>& genmotheridx,
+                                                                        const rvec<float>& genmuonpt,
+                                                                        const rvec<float>& genmuoneta,
+                                                                        const rvec<float>& genmuonphi,
+                                                                        const rvec<float>& genmuonmass,
+                                                                        const rvec<int>& genmuonpdgid,
+                                                                        const rvec<int>& genmuonmotheridx,
+                                                                        const rvec<int>& genmuonstatus,
+                                                                        const float& met_pt,
+                                                                        const float& met_phi){
+                                                        TLorentzVector tau, muon, met, highest_tau, highest_muon;
+                                                        float highest_mass = 0;
+                                                        int best_i = 0;
+                                                        int best_j = 0;
+                                                        for (unsigned int i = 0; i < genmuonpt.size(); i++){
+                                                                if( abs(genmuonpdgid[i]) == 15 and abs(genmuonpdgid[genmuonmotheridx[i]]) == 32){
+                                                                    tau.SetPtEtaPhiM(genmuonpt[i], genmuoneta[i], genmuonphi[i], genmuonmass[i]);
+                                                                    double mass_vis = 0;
+                                                                    for(unsigned int j = 0; j < genmuonpt.size(); j++){
+                                                                        if( abs(genmuonpdgid[j]) == 13 and abs(genmuonpdgid[genmuonmotheridx[j]]) == 32){
+                                                                            muon.SetPtEtaPhiM(genmuonpt[j], genmuoneta[j], genmuonphi[j], genmuonmass[j]);
+                                                                            mass_vis = (tau + muon).M();
+                                                                            if ( highest_mass < mass_vis){
+                                                                                highest_mass = mass_vis;
+                                                                                highest_tau = tau;
+                                                                                highest_muon = muon;
+                                                                                best_i = i;
+                                                                                best_j = j;
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                        }
+                                                        return highest_mass;
+                                             },{"GenVisTau_pt","GenVisTau_eta","GenVisTau_phi","GenVisTau_mass","GenVisTau_genPartIdxMother","GenPart_pt","GenPart_eta","GenPart_phi","GenPart_mass","GenPart_pdgId","GenPart_genPartIdxMother","GenPart_statusFlags","GenMET_pt","GenMET_phi"})
+           
                                  .Define("sel_Tau_genPt", [](const rvec<float>& genpt,
                                                              const int& Tau_genIdx){
                                                                 return genpt[Tau_genIdx];
@@ -1966,12 +2171,13 @@ RNode run_analyser(  RNode df,
         
         auto dimuon_cut = defquants.Filter(dimuonpair_cut,{"Muon_pt_corr" + muon_shift,"Muon_eta","Muon_phi", "DiMuon_mask"},"Di Muon Pair Cut");
         auto delR_cut = dimuon_cut.Filter(mutaudelR_cut,{"sel_Muon_eta","sel_Muon_phi", "sel_Tau_eta", "sel_Tau_phi"},"Mu Tau Del R Cut");
+        auto df_jet_matching = delR_cut.Define("matched_jet",jet_matching, {"sel_Tau_pt","sel_Tau_eta","sel_Tau_phi","sel_Tau_mass","Jet_pt","Jet_eta","Jet_phi","Jet_mass"});
+        auto jet_matching_cut = df_jet_matching.Filter("matched_jet == true","jet matching cut");
         
         // Calculate MT distribution
-        auto mtcalc = delR_cut.Define("MT", mass_transv, {"sel_Muon_pt", "sel_Muon_phi", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift});
+        auto mtcalc = jet_matching_cut.Define("MT", mass_transv, {"sel_Muon_pt", "sel_Muon_phi", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift});
         auto df_coll = mtcalc.Define("CollMass", collinear_mass, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift}).Define("CollMass_alt", collinear_mass_alt, {"sel_Tau_pt", "sel_Muon_pt", "sel_Tau_eta", "sel_Muon_eta", "sel_Tau_phi", "sel_Muon_phi", "sel_Tau_mass", "sel_Muon_mass", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift});  
         auto df_mll = df_coll;
-        
         // Define and calculate weights for monte carlo
         RNode total_weights = df_mll;
         std::vector < std::string > list_of_weights;
@@ -2011,42 +2217,42 @@ RNode run_analyser(  RNode df,
                                                                           )
                                                                           {
                                                                              return muon_iso_scale_factor(muon_pt, muon_eta, muon_mask, "");
-                                                                          }, {"Muon_pt_corr", "Muon_eta", "Muon_mask"})
+                                                                          }, {"Muon_pt_corr" + muon_shift, "Muon_eta", "Muon_mask"})
                                          .Define("MuonISOScaleFactorUp", [](const rvec<float>& muon_pt,
                                                                           const rvec<float>& muon_eta,
                                                                           const rvec<bool>& muon_mask
                                                                           )
                                                                           {
                                                                              return muon_iso_scale_factor(muon_pt, muon_eta, muon_mask, "Up");
-                                                                          }, {"Muon_pt_corr", "Muon_eta", "Muon_mask"})
+                                                                          }, {"Muon_pt_corr" + muon_shift, "Muon_eta", "Muon_mask"})
                                          .Define("MuonISOScaleFactorDown", [](const rvec<float>& muon_pt,
                                                                               const rvec<float>& muon_eta,
                                                                               const rvec<bool>& muon_mask
                                                                               )
                                                                               {
                                                                                  return muon_iso_scale_factor(muon_pt, muon_eta, muon_mask, "Down");
-                                                                              }, {"Muon_pt_corr", "Muon_eta", "Muon_mask"})
+                                                                              }, {"Muon_pt_corr" + muon_shift, "Muon_eta", "Muon_mask"})
                                          .Define("MuonIDScaleFactor", []( const rvec<float>& muon_pt,
                                                                           const rvec<float>& muon_eta,
                                                                           const rvec<bool>& muon_mask
                                                                           )
                                                                           {
                                                                              return muon_id_scale_factor(muon_pt, muon_eta, muon_mask, "");
-                                                                          }, {"Muon_pt_corr", "Muon_eta", "Muon_mask"})
+                                                                          }, {"Muon_pt_corr" + muon_shift, "Muon_eta", "Muon_mask"})
                                          .Define("MuonIDScaleFactorUp", []( const rvec<float>& muon_pt,
                                                                           const rvec<float>& muon_eta,
                                                                           const rvec<bool>& muon_mask
                                                                           )
                                                                           {
                                                                              return muon_id_scale_factor(muon_pt, muon_eta, muon_mask, "Up");
-                                                                          }, {"Muon_pt_corr", "Muon_eta", "Muon_mask"})
+                                                                          }, {"Muon_pt_corr" + muon_shift, "Muon_eta", "Muon_mask"})
                                          .Define("MuonIDScaleFactorDown", []( const rvec<float>& muon_pt,
                                                                           const rvec<float>& muon_eta,
                                                                           const rvec<bool>& muon_mask
                                                                           )
                                                                           {
                                                                              return muon_id_scale_factor(muon_pt, muon_eta, muon_mask, "Down");
-                                                                          }, {"Muon_pt_corr", "Muon_eta", "Muon_mask"})
+                                                                          }, {"Muon_pt_corr" + muon_shift, "Muon_eta", "Muon_mask"})
                                          .Define("WWshape", [](){ return (float) 1.;})
                                          .Define("WWshapeUp", []( const float& coll_mass
                                                                           )
@@ -2056,7 +2262,7 @@ RNode run_analyser(  RNode df,
                                                                                  return weight ;
                                                                              }
                                                                              return (float) 1.;
-                                                                          }, {"CollMass_alt"})
+                                                                          }, {"CollMass"})
                                          .Define("WWshapeDown", []( const float& coll_mass
                                                                           )
                                                                           {
@@ -2065,7 +2271,7 @@ RNode run_analyser(  RNode df,
                                                                                  return weight;
                                                                              }
                                                                              return (float) 1.;
-                                                                          }, {"CollMass_alt"})
+                                                                          }, {"CollMass"})
                                          .Define("TopQ", []( const float& Mll
                                                                           )
                                                                           {
@@ -2119,7 +2325,7 @@ RNode run_analyser(  RNode df,
                                                                      const rvec<bool>& mask
                                                                      ) { 
                                                                          return trigger_sf(pt, eta,mask, "");
-                                                                    }, {"Muon_pt_corr", "Muon_eta", "Muon_mask"})
+                                                                    }, {"Muon_pt_corr"+ muon_shift, "Muon_eta", "Muon_mask"})
                                     .Define("TriggerScaleFactorUp", [](const rvec<float>& pt,
                                                                      const rvec<float>& eta,
                                                                      const rvec<bool>& mask
@@ -2131,7 +2337,7 @@ RNode run_analyser(  RNode df,
                                                                      const rvec<bool>& mask
                                                                      ) { 
                                                                          return trigger_sf(pt, eta, mask, "Down");
-                                                                    }, {"Muon_pt_corr", "Muon_eta", "Muon_mask"})
+                                                                    }, {"Muon_pt_corr" + muon_shift, "Muon_eta", "Muon_mask"})
                                     .Define("MuonReco", [](const rvec<float>& pt,
                                                                      const rvec<float>& eta,
                                                                      const rvec<float>& phi,
@@ -2139,7 +2345,7 @@ RNode run_analyser(  RNode df,
                                                                      const rvec<bool>& mask
                                                                      ) { 
                                                                          return muon_reco_eff(pt, eta, phi, mass,mask,"");
-                                                                    }, {"Muon_pt_corr", "Muon_eta", "Muon_phi", "Muon_mass", "Muon_mask"})
+                                                                    }, {"Muon_pt_corr" + muon_shift, "Muon_eta", "Muon_phi", "Muon_mass", "Muon_mask"})
                                     .Define("MuonRecoUp", [](const rvec<float>& pt,
                                                                      const rvec<float>& eta,
                                                                      const rvec<float>& phi,
@@ -2147,7 +2353,7 @@ RNode run_analyser(  RNode df,
                                                                      const rvec<bool>& mask
                                                                      ) { 
                                                                          return muon_reco_eff(pt, eta, phi, mass,mask,"Up");
-                                                                    }, {"Muon_pt_corr", "Muon_eta", "Muon_phi", "Muon_mass", "Muon_mask"})
+                                                                    }, {"Muon_pt_corr" + muon_shift, "Muon_eta", "Muon_phi", "Muon_mass", "Muon_mask"})
                                     .Define("MuonRecoDown", [](const rvec<float>& pt,
                                                                      const rvec<float>& eta,
                                                                      const rvec<float>& phi,
@@ -2155,13 +2361,13 @@ RNode run_analyser(  RNode df,
                                                                      const rvec<bool>& mask
                                                                      ) { 
                                                                          return muon_reco_eff(pt, eta, phi, mass,mask,"Down");
-                                                                    }, {"Muon_pt_corr", "Muon_eta", "Muon_phi", "Muon_mass", "Muon_mask"});
+                                                                    }, {"Muon_pt_corr"+ muon_shift , "Muon_eta", "Muon_phi", "Muon_mass", "Muon_mask"});
             define_weight(total_weights, default_weights, list_of_weights);
 
             if (default_run) {
                     //DEFINE NON-ENERGY RELATED UNCERTAINTIES
-                    total_weights = total_weights.Define("pileup_weightUp", [](const float& nvtx_true){ return pu_weight(nvtx_true, "Up"); }, {"Pileup_nTrueInt"})
-                                                 .Define("pileup_weightDown", [](const float& nvtx_true){ return pu_weight(nvtx_true, "Down"); }, {"Pileup_nTrueInt"})
+                    total_weights = total_weights.Define("pileup_weightUp", [](const int& nvtx_true){ return pu_weight(nvtx_true, "Up"); }, {"Pileup_nPU"})
+                                                 .Define("pileup_weightDown", [](const int& nvtx_true){ return pu_weight(nvtx_true, "Down"); }, {"Pileup_nPU"})
                                                  .Define("prefiring_weight_Up", [](const rvec<float>& jet_pt,
                                                                          const rvec<float>& jet_eta,
                                                                          const rvec<float>& photon_pt,
@@ -2231,38 +2437,66 @@ RNode run_analyser(  RNode df,
                     define_weight(total_weights, default_weights, list_of_weights, "TauMuonFakeScaleFactorDown_eta_eta1p2to1p7", "TauMuonFakeScaleFactor__");
                     define_weight(total_weights, default_weights, list_of_weights, "TauMuonFakeScaleFactorUp_eta_eta1p7", "TauMuonFakeScaleFactor__");
                     define_weight(total_weights, default_weights, list_of_weights, "TauMuonFakeScaleFactorDown_eta_eta1p7", "TauMuonFakeScaleFactor__");
-                    
-                    // factorization & renormalization scale uncertainty
+                    define_weight(total_weights, default_weights, list_of_weights, "prefiring_weight_Up", "PrefiringWeight");
+                    define_weight(total_weights, default_weights, list_of_weights, "prefiring_weight_Down", "PrefiringWeight");
+
+                
+                                // factorization & renormalization scale uncertainty
                     std::vector<std::string> columnNames = total_weights.GetColumnNames();
                     if (std::find(columnNames.begin(), columnNames.end(), "LHEScaleWeight") != columnNames.end()) {
                         total_weights = total_weights.Define("total_weight_ScaleWeightUp", [](const rvec<float>& weights, const float& tot_weight) {
-                                                                                                            if (weights.size() == 0)
-                                                                                                                return (float) 1.0;
-                                                                                                            float max_val = *std::max_element(weights.begin(), weights.end());
+                                                                                                            float max_val = 1.0;
+                                                                                                            for (uint i = 0; i < weights.size(); i++) {
+                                                                                                                if ((i==5) || (i==7)) {
+                                                                                                                    continue;
+                                                                                                                }
+                                                                                                                if (max_val < weights[i]) {
+                                                                                                                    max_val = weights[i];
+                                                                                                                }
+                                                                                                            }
                                                                                                             return max_val*tot_weight;
                                                                                             }, {"LHEScaleWeight", "total_weight"})
                                                                                     .Define("total_weight_ScaleWeightDown", [](const rvec<float>& weights, const float& tot_weight) {
-                                                                                                            if (weights.size() == 0)
-                                                                                                                return (float) 1.0;
-                                                                                                            float min_val = *std::min_element(weights.begin(), weights.end());
+                                                                                                            float min_val = 1.0;
+                                                                                                            for (uint i = 0; i < weights.size(); i++) {
+                                                                                                                if ((i==5) || (i==7)) {
+                                                                                                                    continue;
+                                                                                                                }
+                                                                                                                if (min_val > weights[i]) {
+                                                                                                                    min_val = weights[i];
+                                                                                                                }
+                                                                                                            }
                                                                                                             return min_val*tot_weight;
                                                                                             }, {"LHEScaleWeight", "total_weight"});
-                        list_of_weights.push_back("total_weight_ScaleWeightUp");
-                        list_of_weights.push_back("total_weight_ScaleWeightDown");
+                        
+                    } else {
+                        total_weights = total_weights.Define("total_weight_ScaleWeightUp", "total_weight")
+                                                     .Define("total_weight_ScaleWeightDown", "total_weight");
                     }
+                    list_of_weights.push_back("total_weight_ScaleWeightUp");
+                    list_of_weights.push_back("total_weight_ScaleWeightDown");
                     
                     // pdf weights
                     std::vector<std::string> colNames = total_weights.GetColumnNames();
-                    if (std::find(colNames.begin(), colNames.end(), "LHEPdfWeight") != colNames.end()) {
-                        for (uint i = 1; i < config::pdf_nweights; i++) {
-                            total_weights = total_weights.Define("total_weight_pdf_weight_" + std::to_string(i), [i](const float& weight, const rvec<float>& pdf_weights)
-                                {
-                                    if (pdf_weights.size() != config::pdf_nweights) {
-                                        return weight;
-                                    }
-                                    return weight*pdf_weights[i]/pdf_weights[0];
-                                }, {"total_weight", "LHEPdfWeight"});
-                            list_of_weights.push_back("total_weight_pdf_weight_" + std::to_string(i));
+                    if (std::find(colNames.begin(), colNames.end(), "LHEPdfWeight_def") != colNames.end()) {
+                        if (!config::runOnSignal) {
+                            if (std::find(colNames.begin(), colNames.end(), "LHEWeight_originalXWGTUP") == colNames.end()) {
+                                total_weights = total_weights.Define("LHEWeight_originalXWGTUP", [](const rvec<float>& pdf_weights){return pdf_weights[0];}, {"LHEPdfWeight_def"});
+                            }
+                            for (uint i = 0; i < config::pdf_nweights; i++) {
+                                total_weights = total_weights.Define("total_weight_pdf_weight_" + std::to_string(i), [i](
+                                        const float& weight, 
+                                        const rvec<float>& pdf_weights, 
+                                        const float& orig_weight)
+                                    {
+                                        if (pdf_weights.size() != config::pdf_nweights) {
+                                            return weight;
+                                        }
+                                        //~ return weight*pdf_weights[i]/orig_weight;
+                                        return weight*pdf_weights[i]/pdf_weights[0];
+                                    }, {"total_weight", "LHEPdfWeight_def", "LHEWeight_originalXWGTUP"});
+                                list_of_weights.push_back("total_weight_pdf_weight_" + std::to_string(i));
+                            }
                         }
                     }
                 } // default_run
@@ -2277,7 +2511,7 @@ RNode run_analyser(  RNode df,
         
         // actual analysis cut  -- MT > 120. GeV 
         //auto df_mt = df_coll_alt.Filter("MT > 120.", "mt_cut");
-        auto df_mt = total_weights.Filter("MT > 120.", "mt_cut").Define("Sphericity",sphericity_full,{"Tau_pt","Tau_eta","Tau_phi","Tau_mass","Muon_pt_corr" + muon_shift,"Muon_eta","Muon_phi","Muon_mass","Jet_pt","Jet_eta", "Jet_phi", "Jet_mass","Tau_mask", "Muon_mask"}).Define("Sphericity_leptons",sphericity_leptons,{"Tau_pt","Tau_eta","Tau_phi","Tau_mass","Muon_pt_corr" + muon_shift,"Muon_eta","Muon_phi","Muon_mass","Tau_mask", "Muon_mask"});
+        auto df_mt = total_weights.Filter("MT > 120.", "mt_cut").Define("Sphericity",sphericity_full,{"Tau_pt","Tau_eta","Tau_phi","Tau_mass","Muon_pt_corr" + muon_shift,"Muon_eta","Muon_phi","Muon_mass","Jet_pt_nom","Jet_eta", "Jet_phi", "Jet_mass","Tau_mask", "Muon_mask"}).Define("Sphericity_leptons",sphericity_leptons,{"Tau_pt","Tau_eta","Tau_phi","Tau_mass","Muon_pt_corr" + muon_shift,"Muon_eta","Muon_phi","Muon_mass","Tau_mask", "Muon_mask"});
         auto df_dip = df_mt.Filter("CollMass > 800. && CollMass < 1000.", "dip");
 
         auto df_delphi_taumet = df_mt.Define("DeltaPhi_tau_met", delta_phi, {"sel_Tau_phi", met_branch_name + "_phi"});  
@@ -2297,10 +2531,183 @@ RNode run_analyser(  RNode df,
             //create_hists(total_weights, "Stage0", tau_shift, met_shift, "total_weight");
             
             //create_hists(df_mt, "Stage0", muon_shift, tau_shift, met_shift, "total_weight");
-            ROOT::RDF::RSnapshotOptions opts;
-            opts.fLazy = false;
             if(!config::runOnData && config::doSnapshot){
-                df_mt.Snapshot("Events","output/" + std::to_string(config::era) + '/' + runName + "_snapshot.root",{"CollMass","sel_Muon_pt","sel_Tau_pt","CollMass_gen", "genWeight","total_weight","sel_Tau_genPartFlav"},opts);
+                ROOT::RDF::RSnapshotOptions opts;
+                opts.fLazy = false;
+                std::string snapshot;
+                total_weights.Snapshot
+                //total_weights.Snapshot<
+                //              UInt_t,
+                //              UInt_t,
+                //               rvec<float>,
+                //               rvec<float>,
+                //               rvec<float>,
+                //               rvec<float>,
+                //               rvec<float>,
+                //               rvec<float>,
+                //               rvec<float>,
+                //               rvec<float>,
+                //               rvec<float>,
+                //               rvec<float>,
+                //               rvec<float>,
+                //               rvec<float>,
+                //               rvec<float>,
+                //               rvec<float>,
+                //               rvec<float>,
+                //               rvec<float>,
+                //               rvec<float>,
+                //               rvec<float>,
+                //               rvec<float>,
+                //               rvec<float>,
+                //               float,
+                //               float,
+                //               float,
+                //               float,
+                //               float,
+                //               float,
+                //               float,
+                //               float,
+                //               float,
+                //               float,
+                //               float,
+                //               float,
+                //               float,
+                //               float,
+                //              // float,
+                //              // float,
+                //              // float,
+                //              // float,
+                //              // float,
+                //              // float,
+                //              // float,
+                //              // float,
+                //               float,
+                //               double,
+                //               float,
+                //               float,
+                //               rvec<bool>,
+                //               rvec<bool>,
+                //               rvec<int>,
+                //               rvec<UChar_t>,
+                //               float,
+                //               rvec<float>,
+                //               rvec<int>,
+                //               rvec<bool>,
+                //               rvec<int>,
+                //               rvec<int>,
+                //               rvec<UChar_t>,
+                //               rvec<UChar_t>,
+                //               rvec<UChar_t>,
+                //               rvec<bool>,
+                //               rvec<UChar_t>,
+                //               rvec<UChar_t>
+                //               >
+                               ("Events","output/" + std::to_string(config::era) + "/snapshots/" + runName,
+                               {
+                               "nTau",
+                               "nMuon",
+                               "nGenPart",
+                               "nGenVisTau",
+                               "nJet",
+                               "Muon_pt_corr",
+                                "Muon_pt_corr_muonResolutionUp",
+                                "Muon_pt_corr_muonResolutionDown",
+                                "Muon_pt_corr_muonScaleUp",
+                                "Muon_pt_corr_muonScaleDown",
+                                "Muon_eta",
+                                "Muon_phi",
+                                "Muon_mass", 
+                                "Tau_pt_ES",
+                                "Tau_eta_ES",
+                                "Tau_phi_ES", 
+                                "Tau_mass_ES", 
+                                "Tau_pt_ESUp",
+                                "Tau_eta_ESUp",
+                                "Tau_phi_ESUp", 
+                                "Tau_mass_ESUp",
+                                "Tau_pt_ESDown",
+                                "Tau_eta_ESDown",
+                                "Tau_phi_ESDown", 
+                                "Tau_mass_ESDown",
+                                met_branch_name + "_pt_jer" ,
+                                met_branch_name + "_phi_jer",
+                                met_branch_name + "_pt_jerUp",
+                                met_branch_name + "_pt_jerDown",
+                                met_branch_name + "_phi_jerUp",
+                                met_branch_name + "_phi_jerDown",
+                                met_branch_name + "_pt_jesTotalUp" ,
+                                met_branch_name + "_pt_jesTotalDown",
+                                met_branch_name + "_phi_jesTotalUp" ,
+                                met_branch_name + "_phi_jesTotalDown" ,
+                                met_branch_name + "_pt_unclustEnUp",
+                                met_branch_name + "_pt_unclustEnDown",
+                                met_branch_name + "_phi_unclustEnUp",
+                                met_branch_name + "_phi_unclustEnDown",
+                                "CollMass",
+                               // "CollMass_ESUp",
+                               // "CollMass_ESDown",
+                               // "CollMass_muonResolutionUp",
+                               // "CollMass_muonResolutionDown",
+                               // "CollMass_muonScaleUp",
+                               // "CollMass_muonScaleDown",
+                               // "CollMass_jerUp",
+                               // "CollMass_jerDown",
+                               // "CollMass_jesTotalUp",
+                               // "CollMass_jesTotalDown",
+                               // "CollMass_unclustEnUp",
+                               // "CollMass_unclustEnDown",
+                                "CollMass_gen",
+                                "genWeight",
+                                "total_weight",
+                                "Tau_mask",
+                                "Muon_mask",
+                                "col_idx",
+                                "Tau_genPartIdx",
+                                "Tau_genPartFlav",
+                                "sel_Tau_genPartFlav",
+                                "Tau_dz",
+                                "Tau_charge",
+                                config::tau_dm,
+                                "Tau_decayMode",
+                                "Tau_jetIdx",
+                                "Tau_idDeepTau2017v2p1VSjet",
+                                "Tau_idDeepTau2017v2p1VSe",
+                                "Tau_idDeepTau2017v2p1VSmu",
+                                "Muon_isPFcand",
+                                "Muon_highPtId",
+                                "Muon_tkIsoId",
+                                "Muon_genPartIdx",
+                                "MT",
+                                "GenVisTau_pt",
+                                "GenVisTau_eta",
+                                "GenVisTau_phi",
+                                "GenVisTau_mass",
+                                "GenVisTau_status",
+                                "GenPart_pt",
+                                "GenPart_phi",
+                                "GenPart_eta",
+                                "GenPart_mass",
+                                "GenPart_statusFlags",
+                                "GenPart_genPartIdxMother",
+                                "sel_Tau_genIdx",
+                                "sel_Tau_genVisIdx",
+                                "sel_Muon_genIdx",
+                                "sel_Muon_pt",
+                                "sel_Muon_eta",
+                                "sel_Muon_phi",
+                                "sel_Muon_mass",
+                                "GenMET_pt",
+                                "GenMET_phi",
+                                "GenPart_pdgId",
+                                "GenPart_status",
+                                "Tau_jetIdx",
+                                "Jet_pt",
+                                "Jet_pt_nom",
+                                "Jet_eta",
+                                "Jet_phi",
+                                "Jet_mass"
+
+                                },opts);
                 fill_gen_hists(df_mt);
             }
          } 
@@ -2328,7 +2735,7 @@ std::vector < std::string > readfiles(const char* file_directory) {
 			if (!file->IsDirectory() and fname.EndsWith(".root")) {
 				std::string full_path = file_directory;
 				full_path += file->GetName();
-				rootfiles.push_back(full_path);
+                rootfiles.push_back(full_path);
 			}
 		}
 	}
@@ -2351,82 +2758,84 @@ void analyse(   RNode df,
     auto met_filter = df.Filter(config::metfilters, "MET filters");
     
     auto good_primary_vertex = met_filter.Filter("PV_npvsGood > 1", "has good PV");
+    //auto good_primary_vertex = met_filter;
     
     // handle 2018 HEM problem
     RNode fixed = good_primary_vertex;
+    //if (config::era == 2018) {
+    //    fixed = good_primary_vertex.Filter([](   const rvec<float>& jet_pt,
+    //                                    const rvec<float>& jet_eta,
+    //                                    const rvec<float>& jet_phi){
+    //                                        for (uint i = 0; i < jet_pt.size(); i++) {
+    //                                            if (jet_pt[i] < 30)
+    //                                                continue;
+    //                                            if ( jet_eta[i] < -3.0 || jet_eta[i] > -1.3 )
+    //                                                continue;
+    //                                            if ( jet_phi[i] < -1.57 || jet_phi[i] > -0.87 )
+    //                                                continue;
+    //                                            return false;
+    //                                        }
+    //                                        return true;
+    //                                    }, {"Jet_pt_nom", "Jet_eta", "Jet_phi"}, "2018 HEM problem");
+    //}
     if (!config::runOnData) {
             // Signal Study
             fixed = init_PDFs(fixed);
         }
         
-        std::vector<double> pdf_all( config::pdf_nweights, 0);
-        std::vector<double> pdf_passed( config::pdf_nweights, 0);
+        //std::vector<double> pdf_all( config::pdf_nweights, 0);
+        //std::vector<double> pdf_passed( config::pdf_nweights, 0);
         if (config::runOnSignal) {
-            fixed = fixed.Filter([&pdf_all, &pdf_passed] (
-                    const rvec<float>& pdf_weights,
-                    const rvec<float>& genVisTau_pt,
-                    const rvec<float>& genVisTau_eta,
-                    const rvec<float>& GenPart_pt,
-                    const rvec<float>& GenPart_eta,
-                    const rvec<int>& GenPart_pdgId)
-                mutable {
-                    // calculate GenAcceptance
-                    bool hasGenTauInAcceptance = false;
-                    bool hasGenMuonInAcceptance = false;
-                    for (uint i = 0; i < genVisTau_pt.size(); i++) {
-                        if (genVisTau_pt[i] < config::tau_pt) {
-                            continue;
-                        }
-                        if (std::abs(genVisTau_eta[i]) > 2.3) {
-                            continue;
-                        }
-                        hasGenTauInAcceptance = true;
-                        break;
-                    }
-                    for (uint i = 0; i < GenPart_pt.size(); i++) {
-                        if(abs(GenPart_pdgId[i]) == 13 && GenPart_pt[i] > config::muon_pt && abs(GenPart_eta[i]) < config::muon_eta){
-                            hasGenMuonInAcceptance = true;
-                            break;
-                        }
-                    }
-                    
-                    // general Jonas procedure
-                    for (uint i = 0; i < pdf_weights.size(); i++) {
-                        pdf_all[i] += pdf_weights[i];
-                        if (hasGenTauInAcceptance && hasGenMuonInAcceptance) {
-                            pdf_passed[i] += pdf_weights[i];
-                        }
-                    }
-                    
-                    return true;
-                }, {"LHEPdfWeight", "GenVisTau_pt", "GenVisTau_eta", "GenPart_pt", "GenPart_eta", "GenPart_pdgId"});
-        }
-    if (config::era == 2018) {
-        fixed = good_primary_vertex.Filter([](   const rvec<float>& jet_pt,
-                                        const rvec<float>& jet_eta,
-                                        const rvec<float>& jet_phi){
-                                            for (uint i = 0; i < jet_pt.size(); i++) {
-                                                if (jet_pt[i] < 30)
-                                                    continue;
-                                                if ( jet_eta[i] < -3.0 || jet_eta[i] > -1.3 )
-                                                    continue;
-                                                if ( jet_phi[i] < -1.57 || jet_phi[i] > -0.87 )
-                                                    continue;
-                                                return false;
+            fixed = fixed.Define("hasTauInAcceptance", [](
+                        const rvec<float>& genVisTau_pt,
+                        const rvec<float>& genVisTau_eta){
+                            bool hasGenTauInAcceptance = false;
+                            for (uint i = 0; i < genVisTau_pt.size(); i++) {
+                                if (genVisTau_pt[i] < config::tau_pt) {
+                                    continue;
+                                }
+                                if (std::abs(genVisTau_eta[i]) > 2.3) {
+                                    continue;
+                                }
+                                hasGenTauInAcceptance = true;
+                                break;
+                            }
+                            return hasGenTauInAcceptance;
+                            }, {"GenVisTau_pt", "GenVisTau_eta"})
+                          .Define("hasMuonInAcceptance", [](
+                                  const rvec<float>& GenPart_pt,
+                                  const rvec<float>& GenPart_eta,
+                                  const rvec<int>& GenPart_pdgId){
+                                  bool hasGenMuonInAcceptance = false;
+                                    for (uint i = 0; i < GenPart_pt.size(); i++) {
+                                        if(abs(GenPart_pdgId[i]) == 13 && GenPart_pt[i] > config::muon_pt && abs(GenPart_eta[i]) < config::muon_eta){
+                                            hasGenMuonInAcceptance = true;
+                                            break;
+                                        }
+                                    }
+                                    return hasGenMuonInAcceptance;
+                                  
+                                  }, {"GenPart_pt","GenPart_eta","GenPart_pdgId"});
+            fixed = fixed.Define("pdf_passed", [](
+                                        const rvec<float>& pdf_weights,
+                                        const bool hasTauAcceptance,
+                                        const bool hasMuonAcceptance)
+                                    {
+                                        rvec<float> tmp( pdf_weights.size(), 0);
+                                        for (uint i = 0; i < pdf_weights.size(); i++) {
+                                            tmp[i] = 0;
+                                            if (hasTauAcceptance && hasMuonAcceptance) {
+                                                //if(pdf_weights[i] >= 0.){
+                                                    tmp[i] = pdf_weights[i];
+                                               // }
+                                               // else{
+                                               //     tmp[i] = 1.;
+                                               // }
                                             }
-                                            return true;
-                                        }, {"Jet_pt_nom", "Jet_eta", "Jet_phi"}, "2018 HEM problem");
-    }
-    
-    
-    // Signal Study
-    //init_signal_gen_plots(df);
-    
-    
-    
-    // Trigger study
-    //trigger_study(df);
-    
+                                        }
+                                        return tmp;
+                                    }, {"LHEPdfWeight_def", "hasTauInAcceptance", "hasMuonInAcceptance"});
+            }
     
     // END generic analysis part ---------------------------------------
     
@@ -2460,8 +2869,8 @@ void analyse(   RNode df,
     //auto df_analyzed = fixed;
     
     auto final_note = fixed;
+    auto base = fixed;
     for (const auto& tau_shift: tau_shifts) {
-        auto base = fixed;
         if (!config::runOnData) {
             base = base.Define("Tau" + tau_shift + "_vectors", [tau_shift](const rvec<int>& tau_decayMode,
                                             const rvec<UChar_t>& tau_genPartFlav,
@@ -2476,51 +2885,66 @@ void analyse(   RNode df,
                         .Define("Tau_eta" + tau_shift, [](const rvec< rvec < float > >& es_vector){return apply_tau_energy_scale(es_vector, 1);}, {"Tau" + tau_shift + "_vectors"})
                         .Define("Tau_phi" + tau_shift, [](const rvec< rvec < float > >& es_vector){return apply_tau_energy_scale(es_vector, 2);}, {"Tau" + tau_shift + "_vectors"})
                         .Define("Tau_mass" + tau_shift, [](const rvec< rvec < float > >& es_vector){return apply_tau_energy_scale(es_vector, 3);}, {"Tau" + tau_shift + "_vectors"});
-        } else {
-            base = base.Define("Tau_pt_ES", [](const rvec<float>& tau_pt){return tau_pt;}, {"Tau_pt"})
-                        .Define("Tau_eta_ES", [](const rvec<float>& tau_eta){return tau_eta;}, {"Tau_eta"})
-                        .Define("Tau_phi_ES", [](const rvec<float>& tau_phi){return tau_phi;}, {"Tau_phi"})
-                        .Define("Tau_mass_ES", [](const rvec<float>& tau_mass){return tau_mass;}, {"Tau_mass"});
         }
         
         if (tau_shift == "_ES") {
+            if (config::runOnData) {
+                base = base.Define("Tau_pt_ES", [](const rvec<float>& tau_pt){return tau_pt;}, {"Tau_pt"})
+                            .Define("Tau_eta_ES", [](const rvec<float>& tau_eta){return tau_eta;}, {"Tau_eta"})
+                            .Define("Tau_phi_ES", [](const rvec<float>& tau_phi){return tau_phi;}, {"Tau_phi"})
+                            .Define("Tau_mass_ES", [](const rvec<float>& tau_mass){return tau_mass;}, {"Tau_mass"});
+            }
             for (const auto& muon_shift: muon_shifts) {
                 if (config::runOnData) {
                     break;
                 }
                 else{
                     if( muon_shift != ""){
-                        if(muon_shift == "_muonResolutionUp" or muon_shift == "_muonResolutionDown"){
-                            base = base.Define("Muon_pt_corr" + muon_shift, [muon_shift](const rvec<float>& muon_pt, const rvec<float>& muon_eta){return muonResolutionSmearing(muon_pt,muon_eta,muon_shift);},{"Muon_pt_corr","Muon_eta"});
+                        if(muon_shift == "_muonResolutionUp"){
+                            //base = base.Define("Muon_pt_corr" + muon_shift, [muon_shift](const rvec<float>& muon_pt, const rvec<float>& muon_eta){return muonResolutionSmearing(muon_pt,muon_eta,muon_shift);},{"Muon_pt_corr","Muon_eta"});
+                            base = base.Define("Muon_pt_corr" + muon_shift, [](const rvec<float>& muon_pt, const rvec<float>& muon_eta, const rvec<float>& muon_phi, const rvec<float>& muon_mass){return muon_reso_smearing(muon_pt,muon_eta,muon_phi,muon_mass,"Up");},{"Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass"});
+                        }
+                        else if( muon_shift == "_muonResolutionDown"){
+                            //base = base.Define("Muon_pt_corr" + muon_shift, [muon_shift](const rvec<float>& muon_pt, const rvec<float>& muon_eta){return muonResolutionSmearing(muon_pt,muon_eta,muon_shift);},{"Muon_pt_corr","Muon_eta"});
+                            base = base.Define("Muon_pt_corr" + muon_shift, [](const rvec<float>& muon_pt, const rvec<float>& muon_eta, const rvec<float>& muon_phi, const rvec<float>& muon_mass){return muon_reso_smearing(muon_pt,muon_eta,muon_phi, muon_mass,"Down");},{"Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass"});
                         }
                         else if (muon_shift == "_muonScaleUp" or muon_shift == "_muonScaleDown"){
                             base = base.Define("Muon_pt_corr" + muon_shift, [muon_shift](const rvec<float>& muon_pt, const rvec<float>& muon_eta, const rvec<float>& muon_phi, const rvec<int> q){return scale_correct_muon(muon_pt,muon_eta,muon_phi,q,muon_shift);},{"Muon_pt_corr","Muon_eta", "Muon_phi","Muon_charge"});
                         }
-                        final_note = run_analyser(base, muon_shift, tau_shift, "_jer", genWeightsSum, outFile);
                     }
                 }
             }
-            for (const auto& met_shift: met_shifts) {
-                if (config::runOnData) {
-                    if (met_shift != "_jer") {
-                        continue;
-                    }
-                    else {
-                        final_note = run_analyser(base, "", tau_shift, "_nom", genWeightsSum, outFile);
-                    }
-                }
-                else {
-                   final_note = run_analyser(base, "", tau_shift, met_shift, genWeightsSum, outFile);
-                }
-            }
-        } else {
-            if (config::runOnData) {
-                continue;
-            }
+        } 
+    }
+    for (const auto& tau_shift: tau_shifts) {
+        if(config::runOnData){
+            if (tau_shift == "_ES") final_note = run_analyser(base, "", tau_shift, "_nom", genWeightsSum, outFile);
+        }
+        else{
             final_note = run_analyser(base, "", tau_shift, "_jer", genWeightsSum, outFile);
         }
+    
     }
-
+    for (const auto& muon_shift: muon_shifts) {
+        if (config::runOnData) {
+            break;
+        } 
+        if( muon_shift != ""){
+            final_note = run_analyser(base, muon_shift, "_ES", "_jer", genWeightsSum, outFile);
+        }
+    }
+    for (const auto& met_shift: met_shifts) {
+        if (config::runOnData) {
+            break;
+        }
+        else {
+           if(met_shift == "_jer"){
+               continue;
+           }
+           final_note = run_analyser(base, "", "_ES", met_shift, genWeightsSum, outFile);
+        }
+    }
+    
     auto df_report = final_note.Report();
     df_report->Print();
     // write all hists
@@ -2534,22 +2958,62 @@ void analyse(   RNode df,
         outFile->cd();
     }
     if (config::runOnSignal) {
-        TH1F* pdf_copyhist = (TH1F*) outFile->Get("Stage1/CollMass")->Clone();
+        rvec<float> base(config::pdf_nweights, 0);
+        auto passed_sum = fixed.Reduce< rvec<float> (const rvec<float> &, rvec<float>)>([](const rvec<float>& weights, rvec<float> base) {
+            rvec<float> result(weights.size(), 0);
+            for (uint i = 0; i < weights.size(); i++) {
+                result[i] = weights[i] + base[i];
+            }
+            return result;
+            }, {"pdf_passed"}, base);
+        auto all_sum = fixed.Reduce< rvec<float> (const rvec<float> &, rvec<float> )>([](const rvec<float>& weights, rvec<float> base) {
+            rvec<float> result(weights.size(), 0);
+            for (uint i = 0; i < weights.size(); i++) {
+                //if (weights[i] > 0.){
+                    result[i] = weights[i] + base[i];
+               // }
+                //else result[i] = 1. + base[i];
 
-        double sum = 0;
-        double sum2 = 0;
-        for (uint i = 0; i < pdf_all.size(); i++) {
-            double ratio = pdf_passed[i] / pdf_all[i];
+            }
+            return result;
+            }, {"LHEPdfWeight_def"}, base);
+        
+        double sum = 0; 
+        double sum2 = 0; 
+        for (uint i = 0; i < config::pdf_nweights; i++) {
+            double ratio = passed_sum->at(i) / all_sum->at(i);
             sum += ratio;
             sum2 += ratio * ratio;
         }
-        double pdf_signal_scale = 1./pdf_all.size() * sqrt( pdf_all.size()* sum2 - sum*sum  );
-        pdf_copyhist->Scale( 1.+pdf_signal_scale );
-        outFile->cd("Stage1/Systematics");
+        
+        double pdf_signal_scale = 1./(config::pdf_nweights) * sqrt( (config::pdf_nweights) * sum2 - sum*sum  );
+        //double pdf_signal_scale = 1./(npdfweights) * sqrt( (npdfweights) * sum2 - sum*sum  );
+
+        auto pdf_copyhist = (TH1F*) outFile->Get("Stage1_nosplit/CollMass")->Clone();
+        pdf_copyhist->Scale( 1+pdf_signal_scale );
+        outFile->cd("Stage1_nosplit/Systematics");
         pdf_copyhist->SetName("CollMass_pdf_total");
         pdf_copyhist->Write();
         outFile->cd();
     }
+
+    //if (config::runOnSignal) {
+    //    TH1F* pdf_copyhist = (TH1F*) outFile->Get("Stage1/CollMass")->Clone();
+
+    //    double sum = 0;
+    //    double sum2 = 0;
+    //    for (uint i = 0; i < pdf_all.size(); i++) {
+    //        double ratio = pdf_passed[i] / pdf_all[i];
+    //        sum += ratio;
+    //        sum2 += ratio * ratio;
+    //    }
+    //    double pdf_signal_scale = 1./pdf_all.size() * sqrt( pdf_all.size()* sum2 - sum*sum  );
+    //    pdf_copyhist->Scale( 1.+pdf_signal_scale );
+    //    outFile->cd("Stage1/Systematics");
+    //    pdf_copyhist->SetName("CollMass_pdf_total");
+    //    pdf_copyhist->Write();
+    //    outFile->cd();
+    //}
     
     auto counter = TH1D("counter", "counter", genWeightsSum.size(), 0, genWeightsSum.size());
     for (uint i = 0; i < genWeightsSum.size(); i++) {
@@ -2649,9 +3113,16 @@ int main (int argc, char* argv[]) {
         // open root tree
         RNode df = ROOT::RDataFrame("Events", names);
         df = df.Define("Muon_tP_pt" , []( const rvec<float>& muon_pt, rvec<float>& muon_relTP_pt){
-           return muon_relTP_pt * muon_pt;}, {"Muon_pt", "Muon_tunepRelPt"});
+           return muon_relTP_pt * muon_pt;}, {"Muon_pt", "Muon_tunepRelPt"})
+           //return muon_pt;}, {"Muon_pt", "Muon_tunepRelPt"})
+               .Define("multiplicity", []( const unsigned int& nele, const unsigned int& nmuon, const unsigned int& njets){ return nele + nmuon + njets;}, {"nElectron","nMuon","nJet"});
+        if(!config::runOnData){
+            df = df.Define("Muon_pt_corr", [](const rvec<float>& muon_pt, const rvec<float>& muon_eta, const rvec<float>& muon_phi, const rvec<float>& muon_mass){return muon_reso_smearing(muon_pt,muon_eta,muon_phi,muon_mass,"");},{"Muon_tP_pt", "Muon_eta", "Muon_phi", "Muon_mass"});
+        }
+        else{
+            df = df.Define("Muon_pt_corr", "Muon_tP_pt");
+        }
         
-        df = df.Define("Muon_pt_corr", "Muon_tP_pt");
         if (argc == 3 && std::string(argv[2]) == "test") {
             std::cout << "Running in test mode." << std::endl;
             df = df.Range(500000);
@@ -2668,7 +3139,7 @@ int main (int argc, char* argv[]) {
             
         }
 
-        st:d:vector<std::string> colNames = df.GetColumnNames();
+        std::vector<std::string> colNames = df.GetColumnNames();
         if (std::find(colNames.begin(), colNames.end(), "genWeight") == colNames.end()) {
             df = df.Define("genWeight", [](){return (float)1.0;});
         }
@@ -2687,6 +3158,20 @@ int main (int argc, char* argv[]) {
                 met_branch_name = "METFixEE2017";
             }
         }
+        if(config::era == 2022){
+            loopcounter = loopcounter.Define("MET_pt_nom",[](const float& met_pt){return met_pt;},{"MET_pt"})
+                                     .Define("MET_phi_nom",[](const float& met_pt){return met_pt;},{"MET_phi"})
+                                     .Define("Jet_eta_nom",[](const rvec<float>& jet_pt){return jet_pt;},{"Jet_eta"})
+                                     .Define("Jet_phi_nom",[](const rvec<float>& jet_pt){return jet_pt;},{"Jet_phi"})
+                                     .Define("Jet_pt_nom",[](const rvec<float>& jet_pt){return jet_pt;},{"Jet_pt"});
+                                    // .Define("Electron_cutBased_HEEP",[](const rvec<float>& ele_pt){
+                                    //        rvec<bool> heep;
+                                    //        for(unsigned int i; i < ele_pt.size(); i++){
+                                    //                heep.push_back(false);
+                                    //            }
+                                    //        return heep;
+                                    //        },{"Electron_pt"});
+        }
     //std::vector < std::string > met_shifts = 
     //{ 
     //    "_jer",
@@ -2699,29 +3184,29 @@ int main (int argc, char* argv[]) {
     //};
         auto corr_met_df = loopcounter;
         if(config::runOnData){
-            corr_met_df = loopcounter.Define(met_branch_name + "_corr" + "_pt", correct_met,{"Muon_pt","Muon_tP_pt","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt",met_branch_name + "_phi","run","PV_npvs"})
-                                     .Define(met_branch_name + "_corr" + "_pt_nom", correct_met,{"Muon_pt","Muon_tP_pt","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt_nom",met_branch_name + "_phi","run","PV_npvs"})
-                                     .Define(met_branch_name + "_corr" + "_phi", correct_met_phi,{"Muon_pt","Muon_tP_pt","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt",met_branch_name + "_phi","run","PV_npvs"})
-                                     .Define(met_branch_name + "_corr" + "_phi_nom", correct_met_phi,{"Muon_pt","Muon_tP_pt","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt_nom",met_branch_name + "_phi_nom","run","PV_npvs"});
+            corr_met_df = loopcounter.Define(met_branch_name + "_corr" + "_pt", correct_met,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt",met_branch_name + "_phi","run","PV_npvsGood"})
+                                     .Define(met_branch_name + "_corr" + "_pt_nom", correct_met,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt_nom",met_branch_name + "_phi","run","PV_npvsGood"})
+                                     .Define(met_branch_name + "_corr" + "_phi", correct_met_phi,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt",met_branch_name + "_phi","run","PV_npvsGood"})
+                                     .Define(met_branch_name + "_corr" + "_phi_nom", correct_met_phi,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt_nom",met_branch_name + "_phi_nom","run","PV_npvsGood"});
         
         }
         else{
-            corr_met_df = loopcounter.Define(met_branch_name + "_corr" + "_pt", correct_met,{"Muon_pt","Muon_tP_pt","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt",met_branch_name + "_phi","run","PV_npvs"})
-                                          .Define(met_branch_name + "_corr" + "_pt" + "_jer", correct_met,{"Muon_pt","Muon_tP_pt","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_jer",met_branch_name + "_phi" + "_jer","run","PV_npvs"})
-                                          .Define(met_branch_name + "_corr" + "_pt" + "_jerUp", correct_met     ,{"Muon_pt","Muon_tP_pt","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_jerUp",met_branch_name + "_phi" + "_jerUp","run","PV_npvs"})
-                                          .Define(met_branch_name + "_corr" + "_pt" + "_jerDown", correct_met     ,{"Muon_pt","Muon_tP_pt","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_jerDown",met_branch_name + "_phi" + "_jerDown","run","PV_npvs"})
-                                          .Define(met_branch_name + "_corr" + "_pt" + "_jesTotalUp", correct_met     ,{"Muon_pt","Muon_tP_pt","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_jesTotalUp",met_branch_name + "_phi" + "_jesTotalUp","run","PV_npvs"})
-                                          .Define(met_branch_name + "_corr" + "_pt" + "_jesTotalDown", correct_met     ,{"Muon_pt","Muon_tP_pt","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_jesTotalDown",met_branch_name + "_phi" + "_jesTotalDown","run","PV_npvs"})
-                                          .Define(met_branch_name + "_corr" + "_pt" + "_unclustEnUp", correct_met     ,{"Muon_pt","Muon_tP_pt","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_unclustEnUp",met_branch_name + "_phi" + "_unclustEnUp","run","PV_npvs"})
-                                          .Define(met_branch_name + "_corr" + "_pt" + "_unclustEnDown", correct_met     ,{"Muon_pt","Muon_tP_pt","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_unclustEnDown",met_branch_name + "_phi" + "_unclustEnDown","run","PV_npvs"})
-                                          .Define(met_branch_name + "_corr" + "_phi", correct_met_phi,{"Muon_pt","Muon_tP_pt","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt",met_branch_name + "_phi","run","PV_npvs"})
-                                          .Define(met_branch_name + "_corr" + "_phi" + "_jer", correct_met_phi,{"Muon_pt","Muon_tP_pt","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_jer",met_branch_name + "_phi" + "_jer","run","PV_npvs"})
-                                          .Define(met_branch_name + "_corr" + "_phi" + "_jerUp", correct_met_phi,{"Muon_pt","Muon_tP_pt","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_jerUp",met_branch_name + "_phi" + "_jerUp","run","PV_npvs"})
-                                          .Define(met_branch_name + "_corr" + "_phi" + "_jerDown", correct_met_phi,{"Muon_pt","Muon_tP_pt","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_jerDown",met_branch_name + "_phi" + "_jerDown","run","PV_npvs"})
-                                          .Define(met_branch_name + "_corr" + "_phi" + "_jesTotalUp", correct_met_phi,{"Muon_pt","Muon_tP_pt","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" "_jesTotalUp",met_branch_name + "_phi" + "_jesTotalUp","run","PV_npvs"})
-                                          .Define(met_branch_name + "_corr" + "_phi" + "_jesTotalDown", correct_met_phi,{"Muon_pt","Muon_tP_pt","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_jesTotalDown",met_branch_name + "_phi" + "_jesTotalDown","run","PV_npvs"})
-                                          .Define(met_branch_name + "_corr" + "_phi" + "_unclustEnUp", correct_met_phi,{"Muon_pt","Muon_tP_pt","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_unclustEnUp",met_branch_name + "_phi" + "_unclustEnUp","run","PV_npvs"})
-                                          .Define(met_branch_name + "_corr" + "_phi" + "_unclustEnDown", correct_met_phi,{"Muon_pt","Muon_tP_pt","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_unclustEnDown",met_branch_name + "_phi" + "_unclustEnDown","run","PV_npvs"});
+            corr_met_df = loopcounter.Define(met_branch_name + "_corr" + "_pt", correct_met,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt",met_branch_name + "_phi","run","PV_npvsGood"})
+                                          .Define(met_branch_name + "_corr" + "_pt" + "_jer", correct_met,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_jer",met_branch_name + "_phi" + "_jer","run","PV_npvsGood"})
+                                          .Define(met_branch_name + "_corr" + "_pt" + "_jerUp", correct_met     ,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_jerUp",met_branch_name + "_phi" + "_jerUp","run","PV_npvsGood"})
+                                          .Define(met_branch_name + "_corr" + "_pt" + "_jerDown", correct_met     ,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_jerDown",met_branch_name + "_phi" + "_jerDown","run","PV_npvsGood"})
+                                          .Define(met_branch_name + "_corr" + "_pt" + "_jesTotalUp", correct_met     ,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_jesTotalUp",met_branch_name + "_phi" + "_jesTotalUp","run","PV_npvsGood"})
+                                          .Define(met_branch_name + "_corr" + "_pt" + "_jesTotalDown", correct_met     ,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_jesTotalDown",met_branch_name + "_phi" + "_jesTotalDown","run","PV_npvsGood"})
+                                          .Define(met_branch_name + "_corr" + "_pt" + "_unclustEnUp", correct_met     ,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_unclustEnUp",met_branch_name + "_phi" + "_unclustEnUp","run","PV_npvsGood"})
+                                          .Define(met_branch_name + "_corr" + "_pt" + "_unclustEnDown", correct_met     ,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_unclustEnDown",met_branch_name + "_phi" + "_unclustEnDown","run","PV_npvsGood"})
+                                          .Define(met_branch_name + "_corr" + "_phi", correct_met_phi,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt",met_branch_name + "_phi","run","PV_npvsGood"})
+                                          .Define(met_branch_name + "_corr" + "_phi" + "_jer", correct_met_phi,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_jer",met_branch_name + "_phi" + "_jer","run","PV_npvsGood"})
+                                          .Define(met_branch_name + "_corr" + "_phi" + "_jerUp", correct_met_phi,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_jerUp",met_branch_name + "_phi" + "_jerUp","run","PV_npvsGood"})
+                                          .Define(met_branch_name + "_corr" + "_phi" + "_jerDown", correct_met_phi,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_jerDown",met_branch_name + "_phi" + "_jerDown","run","PV_npvsGood"})
+                                          .Define(met_branch_name + "_corr" + "_phi" + "_jesTotalUp", correct_met_phi,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" "_jesTotalUp",met_branch_name + "_phi" + "_jesTotalUp","run","PV_npvsGood"})
+                                          .Define(met_branch_name + "_corr" + "_phi" + "_jesTotalDown", correct_met_phi,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_jesTotalDown",met_branch_name + "_phi" + "_jesTotalDown","run","PV_npvsGood"})
+                                          .Define(met_branch_name + "_corr" + "_phi" + "_unclustEnUp", correct_met_phi,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_unclustEnUp",met_branch_name + "_phi" + "_unclustEnUp","run","PV_npvsGood"})
+                                          .Define(met_branch_name + "_corr" + "_phi" + "_unclustEnDown", correct_met_phi,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt" + "_unclustEnDown",met_branch_name + "_phi" + "_unclustEnDown","run","PV_npvsGood"});
        }
 	
 	
@@ -2740,7 +3225,53 @@ int main (int argc, char* argv[]) {
 		
 		} else {
 			// counter - PSWeight is filled with ones
-			auto definecounts = corr_met_df.Define("abs_gen_weight", [](const float& x){return std::abs(x);}, {"genWeight"});
+			auto definecounts = corr_met_df.Define("abs_gen_weight", [](const float& x, const UInt_t& run, const UInt_t& lumi, const unsigned long long& event){
+            
+                                                    return std::abs(x);
+                                                    }, {"genWeight","run","luminosityBlock","event"})
+                                           .Define("CollMass_gen_presel", [](const rvec<float>& genpt,
+                                                                        const rvec<float>& geneta, 
+                                                                        const rvec<float>& genphi, 
+                                                                        const rvec<float>& genmass, 
+                                                                        const rvec<int>& genmotheridx,
+                                                                        const rvec<float>& genmuonpt,
+                                                                        const rvec<float>& genmuoneta,
+                                                                        const rvec<float>& genmuonphi,
+                                                                        const rvec<float>& genmuonmass,
+                                                                        const rvec<int>& genmuonpdgid,
+                                                                        const rvec<int>& genmuonmotheridx,
+                                                                        const rvec<int>& genmuonstatus,
+                                                                        const float& met_pt,
+                                                                        const float& met_phi){
+                                                        TLorentzVector tau, muon, met, highest_tau, highest_muon;
+                                                        float highest_mass = 0;
+                                                        int best_i = 0;
+                                                        int best_j = 0;
+                                                        for (unsigned int i = 0; i < genmuonpt.size(); i++){
+                                                                if( abs(genmuonpdgid[i]) == 15 and abs(genmuonpdgid[genmuonmotheridx[i]]) == 32){
+                                                                    tau.SetPtEtaPhiM(genmuonpt[i], genmuoneta[i], genmuonphi[i], genmuonmass[i]);
+                                                                    double mass_vis = 0;
+                                                                    for(unsigned int j = 0; j < genmuonpt.size(); j++){
+                                                                        if( abs(genmuonpdgid[j]) == 13 and abs(genmuonpdgid[genmuonmotheridx[j]]) == 32){
+                                                                            muon.SetPtEtaPhiM(genmuonpt[j], genmuoneta[j], genmuonphi[j], genmuonmass[j]);
+                                                                            mass_vis = (tau + muon).M();
+                                                                            if ( highest_mass < mass_vis){
+                                                                                highest_mass = mass_vis;
+                                                                                highest_tau = tau;
+                                                                                highest_muon = muon;
+                                                                                best_i = i;
+                                                                                best_j = j;
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                        }
+                                                        return highest_mass;
+                                             },{"GenVisTau_pt","GenVisTau_eta","GenVisTau_phi","GenVisTau_mass","GenVisTau_genPartIdxMother","GenPart_pt","GenPart_eta","GenPart_phi","GenPart_mass","GenPart_pdgId","GenPart_genPartIdxMother","GenPart_statusFlags","GenMET_pt","GenMET_phi"});
+           
+            auto collmass_gen_presel_hist = definecounts.Histo1D(	{"CollMass_gen_preselection", "", 			6000u, 0, 6000}, 					"CollMass_gen_presel", "genWeight");
+            //auto top_pair_invmass = df.Histo1D(	{"top_pair_invmass", "", 			6000u, 0, 6000}, 					"top_pair_invmass");
+            hist_dict.emplace("Preselection", collmass_gen_presel_hist);
             if(config::TT){
                 definecounts = definecounts.Define("top_pt_weight", calc_top_pt_reweighting, {"GenPart_pdgId", "GenPart_pt"});
             }
@@ -2751,7 +3282,7 @@ int main (int argc, char* argv[]) {
             //if(config::TT ){
             //    //definecounts = definecounts.Define("Mll", lepton_inv_mass, {"GenPart_pdgId", "GenPart_mass", "GenPart_pt", "GenPart_eta", "GenPart_phi", "GenPart_genPartIdxMother"});
             //}
-            if(config::WW or config::TT){
+            if(config::WW or config::TT ){
                 definecounts = definecounts.Define("Mll", lepton_inv_mass_ww, {"LHEPart_pdgId", "LHEPart_mass","LHEPart_pt","LHEPart_eta","LHEPart_phi","LHEPart_status"});
             }
             else if(config::DY){

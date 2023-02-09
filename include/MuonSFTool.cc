@@ -49,9 +49,6 @@ MuonSFTool::MuonSFTool(const std::string& year, const std::string& id, const std
     std::cerr << std::endl;
     assert(0);
   }
-  if (year == "2017ReReco"){
-    std::cout<<"YES"<<std::endl;
-  }
   
   if(std::find(MuIDs.begin(),MuIDs.end(),ID)!=MuIDs.end()){
       TString filename;

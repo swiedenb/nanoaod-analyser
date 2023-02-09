@@ -40,7 +40,7 @@ std::pair<float, float> calc_as_weights(const float& q2scale,
 RNode init_PDFs(RNode& df) {
     // check if info is already present
     std::vector<std::string> colNames = df.GetColumnNames();
-    if (std::find(colNames.begin(), colNames.end(), "LHEPdfWeight") == colNames.end()) {
+    if (std::find(colNames.begin(), colNames.end(), "LHEPdfWeight_def") == colNames.end()) {
 		
         ///////////////////////////////////////////////////////////////////////////
         // this is initialization of pdf, which only needs to be done once
@@ -63,7 +63,7 @@ RNode init_PDFs(RNode& df) {
                                               LHAPDF::mkPDF( alphaS_IDs.second ) );
             }
             
-            pdfProd = LHAPDF::mkPDF( config::pdf_set_name, 0 );
+            pdfProd = LHAPDF::mkPDF( config::pdf_prod_set_name, 0 );
             config::pdf_is_initialized = true;
         }
         //////////////////////////////////////////////////////////////////////////
@@ -71,11 +71,11 @@ RNode init_PDFs(RNode& df) {
         
         // write info and length to LHEPdfWeight columns
         
-        df = df.Define("LHEPdfWeight", calc_pdf_weights, {"Generator_scalePDF", "Generator_x1", "Generator_x2", "Generator_id1", "Generator_id2"});
+        df = df.Define("LHEPdfWeight_def", calc_pdf_weights, {"Generator_scalePDF", "Generator_x1", "Generator_x2", "Generator_id1", "Generator_id2"});
         if( alphaS_IDs.first and alphaS_IDs.second) {
             df = df.Define("alphaS_weights", calc_as_weights, {"Generator_scalePDF", "Generator_x1", "Generator_x2", "Generator_id1", "Generator_id2"});
         }
-        df = df.Define("nLHEPdfWeight", [](rvec<float> pdf_weights){return pdf_weights.size();}, {"LHEPdfWeight"});
+        df = df.Define("nLHEPdfWeight_def", [](rvec<float> pdf_weights){return pdf_weights.size();}, {"LHEPdfWeight_def"});
 	}
     return df;
 }

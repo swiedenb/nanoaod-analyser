@@ -97,9 +97,9 @@ float EleSFTool::getSFID(double pt, double eta, const std::string& unc) {
 }
 
 float EleSFTool::getSFReco(double pt, double eta, const std::string& unc) {
-  Int_t ptbin = hist.GetXaxis()->FindBin(pt);
-  Int_t etabin = hist.GetYaxis()->FindBin(fabs(eta));
-  float SF  = hist.GetBinContent(etabin,ptbin);
+  Int_t ptbin = hist_reco.GetXaxis()->FindBin(pt);
+  Int_t etabin = hist_reco.GetYaxis()->FindBin(fabs(eta));
+  float SF  = hist_reco.GetBinContent(etabin,ptbin);
   return SF;
 }
 
