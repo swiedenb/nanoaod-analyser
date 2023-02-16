@@ -306,6 +306,14 @@ float correct_met_single(
                    const float& muon_phi,
                    const float& muon_mass,
                    const bool& PFCand,
+                   const float& tau_pt,
+                   const float& tau_eta,
+                   const float& tau_phi,
+                   const float& tau_mass,
+                   const float& tau_pt_norm,
+                   const float& tau_eta_norm,
+                   const float& tau_phi_norm,
+                   const float& tau_mass_norm,
                    const float& met,
                    const float& met_phi,
                    const UInt_t& runnb,
@@ -317,21 +325,23 @@ float correct_met_single(
              met_corr = METXYCorr_Met_MetPhi(met,met_phi,runnb,config::era, config::runOnData, npv).first;
              met_phi_corr = METXYCorr_Met_MetPhi(met,met_phi,runnb,config::era, config::runOnData, npv).second;
         }
-        TLorentzVector muon_pf_p4, muon_tune_p4,met_p4;
+        TLorentzVector muon_pf_p4, muon_tune_p4,met_p4,tau_p4,tau_es_p4;
         met_p4.SetPtEtaPhiE(met_corr,0,met_phi_corr,met_corr);
         muon_tune_p4.SetPtEtaPhiM(muon_tuneP_pt,0,muon_phi,muon_mass);
         muon_pf_p4.SetPtEtaPhiM(muon_pt,0,muon_phi,muon_mass);
+        tau_es_p4.SetPtEtaPhiM(tau_pt,tau_eta,tau_phi,tau_mass);
+        tau_p4.SetPtEtaPhiM(tau_pt_norm,tau_eta_norm,tau_phi_norm,tau_mass_norm);
         if(PFCand){
             float met_px = met_p4.Px() + muon_pf_p4.Px() - muon_tune_p4.Px();
             float met_py = met_p4.Py() + muon_pf_p4.Py() - muon_tune_p4.Py();
             float met_pt = sqrt(pow(met_px,2) + pow(met_py,2)); 
             met_p4.SetPxPyPzE(met_px,met_py,0,met_pt);
-            return met_p4.Pt();
+        }
+        float met_px = met_p4.Px() + tau_p4.Px() - tau_es_p4.Px();
+        float met_py = met_p4.Py() + tau_p4.Py() - tau_es_p4.Py();
+        float met_pt = sqrt(pow(met_px,2) + pow(met_py,2)); 
+        met_p4.SetPxPyPzE(met_px,met_py,0,met_pt);
 
-        }
-        else{
-            return met_p4.Pt();
-        }
         return met_p4.Pt();
         
 
@@ -343,6 +353,14 @@ float correct_met_single_phi(
                    const float& muon_phi,
                    const float& muon_mass,
                    const bool& PFCand,
+                   const float& tau_pt,
+                   const float& tau_eta,
+                   const float& tau_phi,
+                   const float& tau_mass,
+                   const float& tau_pt_norm,
+                   const float& tau_eta_norm,
+                   const float& tau_phi_norm,
+                   const float& tau_mass_norm,
                    const float& met,
                    const float& met_phi,
                    const UInt_t& runnb,
@@ -354,22 +372,23 @@ float correct_met_single_phi(
              met_corr = METXYCorr_Met_MetPhi(met,met_phi,runnb,config::era, config::runOnData, npv).first;
              met_phi_corr = METXYCorr_Met_MetPhi(met,met_phi,runnb,config::era, config::runOnData, npv).second;
         }
-        TLorentzVector muon_pf_p4, muon_tune_p4,met_p4;
+        TLorentzVector muon_pf_p4, muon_tune_p4,met_p4,tau_p4,tau_es_p4;
         met_p4.SetPtEtaPhiE(met_corr,0,met_phi_corr,met_corr);
         muon_tune_p4.SetPtEtaPhiM(muon_tuneP_pt,0,muon_phi,muon_mass);
         muon_pf_p4.SetPtEtaPhiM(muon_pt,0,muon_phi,muon_mass);
-
+        tau_es_p4.SetPtEtaPhiM(tau_pt,tau_eta,tau_phi,tau_mass);
+        tau_p4.SetPtEtaPhiM(tau_pt_norm,tau_eta_norm,tau_phi_norm,tau_mass_norm);
         if(PFCand){
             float met_px = met_p4.Px() + muon_pf_p4.Px() - muon_tune_p4.Px();
             float met_py = met_p4.Py() + muon_pf_p4.Py() - muon_tune_p4.Py();
             float met_pt = sqrt(pow(met_px,2) + pow(met_py,2)); 
             met_p4.SetPxPyPzE(met_px,met_py,0,met_pt);
-            return met_p4.Phi();
+        }
+        float met_px = met_p4.Px() + tau_p4.Px() - tau_es_p4.Px();
+        float met_py = met_p4.Py() + tau_p4.Py() - tau_es_p4.Py();
+        float met_pt = sqrt(pow(met_px,2) + pow(met_py,2)); 
+        met_p4.SetPxPyPzE(met_px,met_py,0,met_pt);
 
-        }
-        else{
-            return met_p4.Phi();
-        }
         return met_p4.Phi();
         
 
@@ -1184,14 +1203,18 @@ RNode calc_datadriven(RNode df,
                                    .Define("sel_Tau_phi", selected_part_col_idx_tau, {"Tau_phi" + tau_shift, "NonIso_Tau", "col_idx"})
                                    .Define("sel_Tau_mass", selected_part_col_idx_tau, {"Tau_mass" + tau_shift, "NonIso_Tau", "col_idx"})
                                    .Define("sel_Tau_jetIdx", selected_jet_quant, {"Tau_jetIdx", "NonIso_Tau", "col_idx"})
+                                   .Define("sel_Tau_pt_norm", selected_part_col_idx_tau, {"Tau_pt" , "Tau_mask", "col_idx"})
+                                   .Define("sel_Tau_eta_norm", selected_part_col_idx_tau, {"Tau_eta" , "Tau_mask", "col_idx"})
+                                   .Define("sel_Tau_phi_norm", selected_part_col_idx_tau, {"Tau_phi" , "Tau_mask", "col_idx"})
+                                   .Define("sel_Tau_mass_norm", selected_part_col_idx_tau, {"Tau_mass", "Tau_mask", "col_idx"})
                                    .Define("sel_Muon_PF_pt", selected_part_col_idx_muon, {"Muon_pt", "Muon_mask", "col_idx"})
                                    .Define("sel_Muon_isPF", selected_part_col_idx_muon_bool, {"Muon_isPFcand", "Muon_mask", "col_idx"})
                                    .Define("sel_Muon_pt", selected_part_col_idx_muon, {"Muon_pt_corr" + muon_shift, "Muon_mask", "col_idx"})
                                    .Define("sel_Muon_eta", selected_part_col_idx_muon, {"Muon_eta", "Muon_mask", "col_idx"})
                                    .Define("sel_Muon_phi", selected_part_col_idx_muon, {"Muon_phi", "Muon_mask", "col_idx"})
                                    .Define("sel_Muon_mass", selected_part_col_idx_muon, {"Muon_mass", "Muon_mask", "col_idx"})
-                                   .Define("sel_MET_pt" + met_shift, correct_met_single,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + met_shift,met_branch_name + "_phi" + met_shift,"run","PV_npvsGood"})
-                                   .Define("sel_MET_phi" + met_shift, correct_met_single_phi,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + met_shift,met_branch_name + "_phi" + met_shift,"run","PV_npvsGood"});
+                                   .Define("sel_MET_pt" + met_shift, correct_met_single,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF","sel_Tau_pt","sel_Tau_eta","sel_Tau_phi","sel_Tau_mass","sel_Tau_pt_norm","sel_Tau_eta_norm","sel_Tau_phi_norm","sel_Tau_mass_norm",met_branch_name + "_pt" + met_shift,met_branch_name + "_phi" + met_shift,"run","PV_npvsGood"})
+                                   .Define("sel_MET_phi" + met_shift, correct_met_single_phi,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF","sel_Tau_pt","sel_Tau_eta","sel_Tau_phi","sel_Tau_mass","sel_Tau_pt_norm","sel_Tau_eta_norm","sel_Tau_phi_norm","sel_Tau_mass_norm",met_branch_name + "_pt" + met_shift,met_branch_name + "_phi" + met_shift,"run","PV_npvsGood"});
     if (!config::runOnData) {
         defquants = defquants.Define("sel_Tau_genPartFlav", selected_part_col_idx_tau_flav, {"Tau_genPartFlav", "NonIso_Tau", "col_idx"});
     }
@@ -1480,14 +1503,18 @@ RNode calc_datadriven(RNode df,
                                    .Define("sel_Tau_phi", selected_part_col_idx_tau, {"Tau_phi" + tau_shift, "Iso_Tau", "col_idx"})
                                    .Define("sel_Tau_mass", selected_part_col_idx_tau, {"Tau_mass" + tau_shift, "Iso_Tau", "col_idx"})
                                    .Define("sel_Tau_jetIdx", selected_jet_quant, {"Tau_jetIdx", "Iso_Tau", "col_idx"})
+                                   .Define("sel_Tau_pt_norm", selected_part_col_idx_tau, {"Tau_pt" , "Tau_mask", "col_idx"})
+                                   .Define("sel_Tau_eta_norm", selected_part_col_idx_tau, {"Tau_eta" , "Tau_mask", "col_idx"})
+                                   .Define("sel_Tau_phi_norm", selected_part_col_idx_tau, {"Tau_phi" , "Tau_mask", "col_idx"})
+                                   .Define("sel_Tau_mass_norm", selected_part_col_idx_tau, {"Tau_mass", "Tau_mask", "col_idx"})
                                    .Define("sel_Muon_PF_pt", selected_part_col_idx_muon, {"Muon_pt", "Muon_mask", "col_idx"})
                                    .Define("sel_Muon_isPF", selected_part_col_idx_muon_bool, {"Muon_isPFcand", "Muon_mask", "col_idx"})
                                    .Define("sel_Muon_pt", selected_part_col_idx_muon, {"Muon_pt_corr" + muon_shift, "Muon_mask", "col_idx"})
                                    .Define("sel_Muon_eta", selected_part_col_idx_muon, {"Muon_eta", "Muon_mask", "col_idx"})
                                    .Define("sel_Muon_phi", selected_part_col_idx_muon, {"Muon_phi", "Muon_mask", "col_idx"})
                                    .Define("sel_Muon_mass", selected_part_col_idx_muon, {"Muon_mass", "Muon_mask", "col_idx"})
-                                   .Define("sel_MET_pt" + met_shift, correct_met_single,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + met_shift,met_branch_name + "_phi" + met_shift,"run","PV_npvsGood"})
-                                   .Define("sel_MET_phi" + met_shift, correct_met_single_phi,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + met_shift,met_branch_name + "_phi" + met_shift,"run","PV_npvsGood"});
+                                   .Define("sel_MET_pt" + met_shift, correct_met_single,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF","sel_Tau_pt","sel_Tau_eta","sel_Tau_phi","sel_Tau_mass","sel_Tau_pt_norm","sel_Tau_eta_norm","sel_Tau_phi_norm","sel_Tau_mass_norm",met_branch_name + "_pt" + met_shift,met_branch_name + "_phi" + met_shift,"run","PV_npvsGood"})
+                                   .Define("sel_MET_phi" + met_shift, correct_met_single_phi,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF","sel_Tau_pt","sel_Tau_eta","sel_Tau_phi","sel_Tau_mass","sel_Tau_pt_norm","sel_Tau_eta_norm","sel_Tau_phi_norm","sel_Tau_mass_norm",met_branch_name + "_pt" + met_shift,met_branch_name + "_phi" + met_shift,"run","PV_npvsGood"});
     if (!config::runOnData) {
         defquants_iso = defquants_iso.Define("sel_Tau_genPartFlav", selected_part_col_idx_tau_flav, {"Tau_genPartFlav", "Iso_Tau", "col_idx"});
     }
@@ -1833,14 +1860,18 @@ RNode apply_datadriven(RNode df, std::string muon_shift, std::string tau_shift, 
                                    .Define("sel_Tau_phi", selected_part_col_idx_tau, {"Tau_phi" + tau_shift, "NonIso_Tau", "col_idx"})
                                    .Define("sel_Tau_mass", selected_part_col_idx_tau, {"Tau_mass" + tau_shift, "NonIso_Tau", "col_idx"})
                                    .Define("sel_Tau_jetIdx", selected_jet_quant, {"Tau_jetIdx", "NonIso_Tau", "col_idx"})
+                                   .Define("sel_Tau_pt_norm", selected_part_col_idx_tau, {"Tau_pt" , "Tau_mask", "col_idx"})
+                                   .Define("sel_Tau_eta_norm", selected_part_col_idx_tau, {"Tau_eta" , "Tau_mask", "col_idx"})
+                                   .Define("sel_Tau_phi_norm", selected_part_col_idx_tau, {"Tau_phi" , "Tau_mask", "col_idx"})
+                                   .Define("sel_Tau_mass_norm", selected_part_col_idx_tau, {"Tau_mass", "Tau_mask", "col_idx"})
                                    .Define("sel_Muon_PF_pt", selected_part_col_idx_muon, {"Muon_pt", "Muon_mask", "col_idx"})
                                    .Define("sel_Muon_isPF", selected_part_col_idx_muon_bool, {"Muon_isPFcand", "Muon_mask", "col_idx"})
                                    .Define("sel_Muon_pt", selected_part_col_idx_muon, {"Muon_pt_corr" + muon_shift, "Muon_mask", "col_idx"})
                                    .Define("sel_Muon_eta", selected_part_col_idx_muon, {"Muon_eta", "Muon_mask", "col_idx"})
                                    .Define("sel_Muon_phi", selected_part_col_idx_muon, {"Muon_phi", "Muon_mask", "col_idx"})
                                    .Define("sel_Muon_mass", selected_part_col_idx_muon, {"Muon_mass", "Muon_mask", "col_idx"})
-                                   .Define("sel_MET_pt" + met_shift, correct_met_single,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + met_shift,met_branch_name + "_phi" + met_shift,"run","PV_npvsGood"})
-                                   .Define("sel_MET_phi" + met_shift, correct_met_single_phi,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + met_shift,met_branch_name + "_phi" + met_shift,"run","PV_npvsGood"});
+                                   .Define("sel_MET_pt" + met_shift, correct_met_single,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF","sel_Tau_pt","sel_Tau_eta","sel_Tau_phi","sel_Tau_mass","sel_Tau_pt_norm","sel_Tau_eta_norm","sel_Tau_phi_norm","sel_Tau_mass_norm",met_branch_name + "_pt" + met_shift,met_branch_name + "_phi" + met_shift,"run","PV_npvsGood"})
+                                   .Define("sel_MET_phi" + met_shift, correct_met_single_phi,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF","sel_Tau_pt","sel_Tau_eta","sel_Tau_phi","sel_Tau_mass","sel_Tau_pt_norm","sel_Tau_eta_norm","sel_Tau_phi_norm","sel_Tau_mass_norm",met_branch_name + "_pt" + met_shift,met_branch_name + "_phi" + met_shift,"run","PV_npvsGood"});
     if (!config::runOnData) {
         defquants_noniso = defquants_noniso.Define("sel_Tau_genPartFlav", selected_part_col_idx_tau_flav, {"Tau_genPartFlav", "NonIso_Tau", "col_idx"});
     }
@@ -2160,14 +2191,18 @@ RNode run_analyser(  RNode df,
                                    .Define("sel_Tau_eta", selected_part_col_idx_tau, {"Tau_eta" + tau_shift, "Tau_mask", "col_idx"})
                                    .Define("sel_Tau_phi", selected_part_col_idx_tau, {"Tau_phi" + tau_shift, "Tau_mask", "col_idx"})
                                    .Define("sel_Tau_mass", selected_part_col_idx_tau, {"Tau_mass" + tau_shift, "Tau_mask", "col_idx"})
+                                   .Define("sel_Tau_pt_norm", selected_part_col_idx_tau, {"Tau_pt" , "Tau_mask", "col_idx"})
+                                   .Define("sel_Tau_eta_norm", selected_part_col_idx_tau, {"Tau_eta" , "Tau_mask", "col_idx"})
+                                   .Define("sel_Tau_phi_norm", selected_part_col_idx_tau, {"Tau_phi" , "Tau_mask", "col_idx"})
+                                   .Define("sel_Tau_mass_norm", selected_part_col_idx_tau, {"Tau_mass", "Tau_mask", "col_idx"})
                                    .Define("sel_Muon_PF_pt", selected_part_col_idx_muon, {"Muon_pt", "Muon_mask", "col_idx"})
                                    .Define("sel_Muon_isPF", selected_part_col_idx_muon_bool, {"Muon_isPFcand", "Muon_mask", "col_idx"})
                                    .Define("sel_Muon_pt", selected_part_col_idx_muon, {"Muon_pt_corr" + muon_shift, "Muon_mask", "col_idx"})
                                    .Define("sel_Muon_eta", selected_part_col_idx_muon, {"Muon_eta", "Muon_mask", "col_idx"})
                                    .Define("sel_Muon_phi", selected_part_col_idx_muon, {"Muon_phi", "Muon_mask", "col_idx"})
                                    .Define("sel_Muon_mass", selected_part_col_idx_muon, {"Muon_mass", "Muon_mask", "col_idx"})
-                                   .Define("sel_MET_pt" + met_shift, correct_met_single,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + met_shift,met_branch_name + "_phi" + met_shift,"run","PV_npvsGood"})
-                                   .Define("sel_MET_phi" + met_shift, correct_met_single_phi,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + met_shift,met_branch_name + "_phi" + met_shift,"run","PV_npvsGood"})
+                                   .Define("sel_MET_pt" + met_shift, correct_met_single,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF","sel_Tau_pt","sel_Tau_eta","sel_Tau_phi","sel_Tau_mass","sel_Tau_pt_norm","sel_Tau_eta_norm","sel_Tau_phi_norm","sel_Tau_mass_norm",met_branch_name + "_pt" + met_shift,met_branch_name + "_phi" + met_shift,"run","PV_npvsGood"})
+                                   .Define("sel_MET_phi" + met_shift, correct_met_single_phi,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF","sel_Tau_pt","sel_Tau_eta","sel_Tau_phi","sel_Tau_mass","sel_Tau_pt_norm","sel_Tau_eta_norm","sel_Tau_phi_norm","sel_Tau_mass_norm",met_branch_name + "_pt" + met_shift,met_branch_name + "_phi" + met_shift,"run","PV_npvsGood"})
                                    .Define("sel_MET_pt_full" + met_shift, correct_met,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt",met_branch_name + "_phi","run","PV_npvs"})
                                    .Define("sel_MET_phi_full" + met_shift, correct_met_phi,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt_nom",met_branch_name + "_phi","run","PV_npvs"});
                 if (!config::runOnData) {
@@ -2278,42 +2313,6 @@ RNode run_analyser(  RNode df,
 
 
         auto corr_met_df  = jet_matching_cut;
-//        if(config::runOnData){
-//           // corr_met_df = corr_met_df.Define(met_branch_name + "_corr" + "_pt", correct_met,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt",met_branch_name + "_phi","run","PV_npvs"})
-//           //                          .Define(met_branch_name + "_corr" + "_pt_nom", correct_met,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt_nom",met_branch_name + "_phi","run","PV_npvs"})
-//           //                          .Define(met_branch_name + "_corr" + "_phi", correct_met_phi,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt",met_branch_name + "_phi","run","PV_npvs"})
-//           //                          .Define(met_branch_name + "_corr" + "_phi_nom", correct_met_phi,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt_nom",met_branch_name + "_phi_nom","run","PV_npvs"});
-//        
-//            corr_met_df = corr_met_df.Define(met_branch_name + "_corr" + "_pt", correct_met_single,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt",met_branch_name + "_phi","run","PV_npvsGood"})
-//                                     .Define(met_branch_name + "_corr" + "_pt_nom", correct_met_single,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt_nom",met_branch_name + "_phi_nom","run","PV_npvsGood"})
-//                                     .Define(met_branch_name + "_corr" + "_phi", correct_met_single_phi,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt",met_branch_name + "_phi","run","PV_npvsGood"})
-//                                     .Define(met_branch_name + "_corr" + "_phi_nom", correct_met_single_phi,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt_nom",met_branch_name + "_phi_nom","run","PV_npvsGood"});
-//            corr_met_df = corr_met_df.Define("sel_MET_pt", correct_met,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt",met_branch_name + "_phi","run","PV_npvs"})
-//                                     .Define("sel_MET_pt_nom", correct_met,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt_nom",met_branch_name + "_phi","run","PV_npvs"})
-//                                     .Define("sel_MET_phi", correct_met_phi,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt",met_branch_name + "_phi","run","PV_npvs"})
-//                                     .Define("sel_MET_phi_nom", correct_met_phi,{"Muon_pt","Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass","Muon_highPtId","Muon_isPFcand",met_branch_name + "_pt_nom",met_branch_name + "_phi_nom","run","PV_npvs"});
-//        
-//        }
-//        else{
-//            corr_met_df = corr_met_df.Define(met_branch_name + "_corr" + "_pt", correct_met_single,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt",met_branch_name + "_phi","run","PV_npvsGood"})
-//                                          .Define(met_branch_name + "_corr" + "_pt" + "_jer", correct_met_single,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + "_jer",met_branch_name + "_phi" + "_jer","run","PV_npvsGood"})
-//                                          .Define(met_branch_name + "_corr" + "_pt" + "_jerUp", correct_met_single     ,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + "_jerUp",met_branch_name + "_phi" + "_jerUp","run","PV_npvsGood"})
-//                                          .Define(met_branch_name + "_corr" + "_pt" + "_jerDown", correct_met_single     ,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + "_jerDown",met_branch_name + "_phi" + "_jerDown","run","PV_npvsGood"})
-//                                          .Define(met_branch_name + "_corr" + "_pt" + "_jesTotalUp", correct_met_single     ,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + "_jesTotalUp",met_branch_name + "_phi" + "_jesTotalUp","run","PV_npvsGood"})
-//                                          .Define(met_branch_name + "_corr" + "_pt" + "_jesTotalDown", correct_met_single     ,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + "_jesTotalDown",met_branch_name + "_phi" + "_jesTotalDown","run","PV_npvsGood"})
-//                                          .Define(met_branch_name + "_corr" + "_pt" + "_unclustEnUp", correct_met_single     ,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + "_unclustEnUp",met_branch_name + "_phi" + "_unclustEnUp","run","PV_npvsGood"})
-//                                          .Define(met_branch_name + "_corr" + "_pt" + "_unclustEnDown", correct_met_single     ,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + "_unclustEnDown",met_branch_name + "_phi" + "_unclustEnDown","run","PV_npvsGood"})
-//                                          .Define(met_branch_name + "_corr" + "_phi", correct_met_single_phi,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt",met_branch_name + "_phi","run","PV_npvsGood"})
-//                                          .Define(met_branch_name + "_corr" + "_phi" + "_jer", correct_met_single_phi,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + "_jer",met_branch_name + "_phi" + "_jer","run","PV_npvsGood"})
-//                                          .Define(met_branch_name + "_corr" + "_phi" + "_jerUp", correct_met_single_phi,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + "_jerUp",met_branch_name + "_phi" + "_jerUp","run","PV_npvsGood"})
-//                                          .Define(met_branch_name + "_corr" + "_phi" + "_jerDown", correct_met_single_phi,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + "_jerDown",met_branch_name + "_phi" + "_jerDown","run","PV_npvsGood"})
-//                                          .Define(met_branch_name + "_corr" + "_phi" + "_jesTotalUp", correct_met_single_phi,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" "_jesTotalUp",met_branch_name + "_phi" + "_jesTotalUp","run","PV_npvsGood"})
-//                                          .Define(met_branch_name + "_corr" + "_phi" + "_jesTotalDown", correct_met_single_phi,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + "_jesTotalDown",met_branch_name + "_phi" + "_jesTotalDown","run","PV_npvsGood"})
-//                                          .Define(met_branch_name + "_corr" + "_phi" + "_unclustEnUp", correct_met_single_phi,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + "_unclustEnUp",met_branch_name + "_phi" + "_unclustEnUp","run","PV_npvsGood"})
-//                                          .Define(met_branch_name + "_corr" + "_phi" + "_unclustEnDown", correct_met_single_phi,{"sel_Muon_PF_pt","sel_Muon_pt","sel_Muon_eta","sel_Muon_phi","sel_Muon_mass","sel_Muon_isPF",met_branch_name + "_pt" + "_unclustEnDown",met_branch_name + "_phi" + "_unclustEnDown","run","PV_npvsGood"});
-//       }
-//        
-//        met_branch_name = met_branch_name + "_corr";
         
         // Calculate MT distribution
         //auto mtcalc = corr_met_df.Define("MT", mass_transv, {"sel_Muon_pt", "sel_Muon_phi", met_branch_name + "_pt" + met_shift, met_branch_name + "_phi" + met_shift});
@@ -2745,7 +2744,7 @@ RNode run_analyser(  RNode df,
                 //               rvec<UChar_t>,
                 //               rvec<UChar_t>
                 //               >
-                               ("Events","output/" + std::to_string(config::era) + "/snapshots/" + runName,
+                               ("Events","output/" + std::to_string(config::era) + "/" + runName + "_snapshot.root",
                                {
                                "nTau",
                                "nMuon",
@@ -3044,11 +3043,9 @@ void analyse(   RNode df,
                 else{
                     if( muon_shift != ""){
                         if(muon_shift == "_muonResolutionUp"){
-                            //base = base.Define("Muon_pt_corr" + muon_shift, [muon_shift](const rvec<float>& muon_pt, const rvec<float>& muon_eta){return muonResolutionSmearing(muon_pt,muon_eta,muon_shift);},{"Muon_pt_corr","Muon_eta"});
                             base = base.Define("Muon_pt_corr" + muon_shift, [](const rvec<float>& muon_pt, const rvec<float>& muon_eta, const rvec<float>& muon_phi, const rvec<float>& muon_mass){return muon_reso_smearing(muon_pt,muon_eta,muon_phi,muon_mass,"Up");},{"Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass"});
                         }
                         else if( muon_shift == "_muonResolutionDown"){
-                            //base = base.Define("Muon_pt_corr" + muon_shift, [muon_shift](const rvec<float>& muon_pt, const rvec<float>& muon_eta){return muonResolutionSmearing(muon_pt,muon_eta,muon_shift);},{"Muon_pt_corr","Muon_eta"});
                             base = base.Define("Muon_pt_corr" + muon_shift, [](const rvec<float>& muon_pt, const rvec<float>& muon_eta, const rvec<float>& muon_phi, const rvec<float>& muon_mass){return muon_reso_smearing(muon_pt,muon_eta,muon_phi, muon_mass,"Down");},{"Muon_pt_corr","Muon_eta","Muon_phi","Muon_mass"});
                         }
                         else if (muon_shift == "_muonScaleUp" or muon_shift == "_muonScaleDown"){
@@ -3228,211 +3225,210 @@ int main (int argc, char* argv[]) {
     files_json >> files;
 
     // loop over all types of backgrounds
-    for (auto& it : files.items()) {
-        // Files to run over
-        std::string path = it.key();
-        std::vector< std::string > names = readfiles(path.c_str());
+    std::string sample = files["sample"];
+    std::string config = files["config"];
+    std::string folder = files["folder"];
+    std::vector <std::string > filenames = files["files"];
+    std::vector <std::string > filepaths;
 
-        // read in config file for the corresponding file
-        std::ifstream cfg_json;
-        cfg_json.open(it.value());
-        cfg_json >> cfg;
+    for (auto& it : filenames){
+        filepaths.push_back(folder + it);
+    }
 
-        // load analysis setup config file (see config.cc)
-        config::load_config_file(cfg);
+    std::ifstream cfg_json;
+    cfg_json.open(config);
+    cfg_json >> cfg;
+
+    config::load_config_file(cfg);
+
+    TString tmp = "output/" + std::to_string(config::era) + "/" + sample + ".root";
+
+    std::cout << "\t \t Running on: " << sample << std::endl;
+
+    runName = sample;
+
+    // create outputfile to write hists
+    TFile* outFile = new TFile(tmp, "RECREATE", "", 101);
+
+    // open root tree
+    RNode df = ROOT::RDataFrame("Events", filepaths);
+    df = df.Define("Muon_tP_pt" , []( const rvec<float>& muon_pt, rvec<float>& muon_relTP_pt){
+       return muon_relTP_pt * muon_pt;}, {"Muon_pt", "Muon_tunepRelPt"})
+       //return muon_pt;}, {"Muon_pt", "Muon_tunepRelPt"})
+           .Define("multiplicity", []( const unsigned int& nele, const unsigned int& nmuon, const unsigned int& njets){ return nele + nmuon + njets;}, {"nElectron","nMuon","nJet"});
+    if(!config::runOnData){
+        df = df.Define("Muon_pt_corr", [](const rvec<float>& muon_pt, const rvec<float>& muon_eta, const rvec<float>& muon_phi, const rvec<float>& muon_mass){return muon_reso_smearing(muon_pt,muon_eta,muon_phi,muon_mass,"");},{"Muon_tP_pt", "Muon_eta", "Muon_phi", "Muon_mass"});
+    }
+    else{
+        df = df.Define("Muon_pt_corr", "Muon_tP_pt");
+    }
+    
+    if (argc == 3 && std::string(argv[2]) == "test") {
+        std::cout << "Running in test mode." << std::endl;
+        df = df.Range(500000);
+    }
+    else if (argc == 4 && std::string(argv[2]) == "test") {
+        std::cout << "Running in test mode with "<< argv[3]<< " events." << std::endl;
+        const char* value = argv[3];
+        stringstream strValue;
+        strValue << value;
+
+        unsigned int intValue;
+        strValue >> intValue;
+        df = df.Range(intValue);
         
-        // Create outfile name from path
-        TPRegexp r1("[^/]+(?=/$|$)");
-        TString tmp = (std::string) it.key();
-        tmp = "output/" + std::to_string(config::era) + "/" + tmp(r1)+ ".root";
+    }
 
-        std::cout << "\t \t Running on: " << tmp(r1) << std::endl;
-
-        runName = tmp(r1);
-
-        // create outputfile to write hists
-        TFile* outFile = new TFile(tmp, "RECREATE", "", 101);
-
-        // open root tree
-        RNode df = ROOT::RDataFrame("Events", names);
-        df = df.Define("Muon_tP_pt" , []( const rvec<float>& muon_pt, rvec<float>& muon_relTP_pt){
-           return muon_relTP_pt * muon_pt;}, {"Muon_pt", "Muon_tunepRelPt"})
-           //return muon_pt;}, {"Muon_pt", "Muon_tunepRelPt"})
-               .Define("multiplicity", []( const unsigned int& nele, const unsigned int& nmuon, const unsigned int& njets){ return nele + nmuon + njets;}, {"nElectron","nMuon","nJet"});
-        if(!config::runOnData){
-            df = df.Define("Muon_pt_corr", [](const rvec<float>& muon_pt, const rvec<float>& muon_eta, const rvec<float>& muon_phi, const rvec<float>& muon_mass){return muon_reso_smearing(muon_pt,muon_eta,muon_phi,muon_mass,"");},{"Muon_tP_pt", "Muon_eta", "Muon_phi", "Muon_mass"});
+    std::vector<std::string> colNames = df.GetColumnNames();
+    if (std::find(colNames.begin(), colNames.end(), "genWeight") == colNames.end()) {
+        df = df.Define("genWeight", [](){return (float)1.0;});
+    }
+    if (!config::runOnData){
+        if (std::find(colNames.begin(), colNames.end(), "LHE_HT") == colNames.end()){
+            df = df.Define("LHE_HT", [](){return (float)0.0;}).Define("LHEPart_pt", [](){return (float)0.0;}).Define("LHEPart_eta", [](){return (float)0.0;}).Define("LHEPart_phi", [](){return (float)0.0;}).Define("LHEPart_mass", [](){return (float)0.0;}).Define("LHEPart_status", [](){return (float)0.0;}).Define("LHEPart_pdgId", [](){return (float)0.0;});
         }
-        else{
-            df = df.Define("Muon_pt_corr", "Muon_tP_pt");
+    }
+    auto loopcounter = df.Filter([](ULong64_t e){if (0ULL == e) std::cout << "Running evtloop" << std::endl; return true;},{"rdfentry_"});
+
+    if (std::find(colNames.begin(), colNames.end(), "METFixEE2017_pt") != colNames.end()) {
+        if (config::era == 2017) {
+            met_branch_name = "METFixEE2017";
         }
+        else if (config::use_EEMET){
+            met_branch_name = "METFixEE2017";
+        }
+    }
+    if(config::era == 2022){
+        loopcounter = loopcounter.Define("MET_pt_nom",[](const float& met_pt){return met_pt;},{"MET_pt"})
+                                 .Define("MET_phi_nom",[](const float& met_pt){return met_pt;},{"MET_phi"})
+                                 .Define("Jet_eta_nom",[](const rvec<float>& jet_pt){return jet_pt;},{"Jet_eta"})
+                                 .Define("Jet_phi_nom",[](const rvec<float>& jet_pt){return jet_pt;},{"Jet_phi"})
+                                 .Define("Jet_pt_nom",[](const rvec<float>& jet_pt){return jet_pt;},{"Jet_pt"});
+                                 //.Define("Electron_cutBased_HEEP",[](const rvec<float>& ele_pt){
+                                 //       rvec<bool> heep;
+                                 //       for(unsigned int i; i < ele_pt.size(); i++){
+                                 //               heep.push_back(false);
+                                 //           }
+                                 //       return heep;
+                                 //       },{"Electron_pt"});
+    }
+//std::vector < std::string > met_shifts = 
+//{ 
+//    "_jer",
+//    "_jerUp",
+//    "_jerDown",
+//    "_jesTotalUp",
+//    "_jesTotalDown",
+//    "_unclustEnUp",
+//    "_unclustEnDown"
+//};
+    auto corr_met_df = loopcounter;
+
+
+    
+
+    if (config::runOnData) {
+        std::ifstream goldenjson_file;
+        goldenjson_file.open(cfg["json_file"]);
+        goldenjson_file >> goldenjson;
+
+        auto jsoncleaned = corr_met_df.Filter(json_check, {"run", "luminosityBlock"}, "json cleaning");
+    
+        // this function does all analysis steps
+        analyse(jsoncleaned, outFile);
+    
+    } else {
+        // counter - PSWeight is filled with ones
+        auto definecounts = corr_met_df.Define("abs_gen_weight", [](const float& x, const UInt_t& run, const UInt_t& lumi, const unsigned long long& event){
         
-        if (argc == 3 && std::string(argv[2]) == "test") {
-            std::cout << "Running in test mode." << std::endl;
-            df = df.Range(500000);
-        }
-        else if (argc == 4 && std::string(argv[2]) == "test") {
-            std::cout << "Running in test mode with "<< argv[3]<< " events." << std::endl;
-            const char* value = argv[3];
-            stringstream strValue;
-            strValue << value;
-
-            unsigned int intValue;
-            strValue >> intValue;
-            df = df.Range(intValue);
-            
-        }
-
-        std::vector<std::string> colNames = df.GetColumnNames();
-        if (std::find(colNames.begin(), colNames.end(), "genWeight") == colNames.end()) {
-            df = df.Define("genWeight", [](){return (float)1.0;});
-        }
-        if (!config::runOnData){
-            if (std::find(colNames.begin(), colNames.end(), "LHE_HT") == colNames.end()){
-                df = df.Define("LHE_HT", [](){return (float)0.0;}).Define("LHEPart_pt", [](){return (float)0.0;}).Define("LHEPart_eta", [](){return (float)0.0;}).Define("LHEPart_phi", [](){return (float)0.0;}).Define("LHEPart_mass", [](){return (float)0.0;}).Define("LHEPart_status", [](){return (float)0.0;}).Define("LHEPart_pdgId", [](){return (float)0.0;});
-            }
-        }
-        auto loopcounter = df.Filter([](ULong64_t e){if (0ULL == e) std::cout << "Running evtloop" << std::endl; return true;},{"rdfentry_"});
-
-        if (std::find(colNames.begin(), colNames.end(), "METFixEE2017_pt") != colNames.end()) {
-            if (config::era == 2017) {
-                met_branch_name = "METFixEE2017";
-            }
-            else if (config::use_EEMET){
-                met_branch_name = "METFixEE2017";
-            }
-        }
-        if(config::era == 2022){
-            loopcounter = loopcounter.Define("MET_pt_nom",[](const float& met_pt){return met_pt;},{"MET_pt"})
-                                     .Define("MET_phi_nom",[](const float& met_pt){return met_pt;},{"MET_phi"})
-                                     .Define("Jet_eta_nom",[](const rvec<float>& jet_pt){return jet_pt;},{"Jet_eta"})
-                                     .Define("Jet_phi_nom",[](const rvec<float>& jet_pt){return jet_pt;},{"Jet_phi"})
-                                     .Define("Jet_pt_nom",[](const rvec<float>& jet_pt){return jet_pt;},{"Jet_pt"});
-                                     //.Define("Electron_cutBased_HEEP",[](const rvec<float>& ele_pt){
-                                     //       rvec<bool> heep;
-                                     //       for(unsigned int i; i < ele_pt.size(); i++){
-                                     //               heep.push_back(false);
-                                     //           }
-                                     //       return heep;
-                                     //       },{"Electron_pt"});
-        }
-    //std::vector < std::string > met_shifts = 
-    //{ 
-    //    "_jer",
-    //    "_jerUp",
-    //    "_jerDown",
-    //    "_jesTotalUp",
-    //    "_jesTotalDown",
-    //    "_unclustEnUp",
-    //    "_unclustEnDown"
-    //};
-        auto corr_met_df = loopcounter;
-	
-	
-		
-
-		if (config::runOnData) {
-			std::ifstream goldenjson_file;
-			goldenjson_file.open(cfg["json_file"]);
-			goldenjson_file >> goldenjson;
-
-			auto jsoncleaned = corr_met_df.Filter(json_check, {"run", "luminosityBlock"}, "json cleaning");
-		
-			// this function does all analysis steps
-			analyse(jsoncleaned, outFile);
-		
-		} else {
-			// counter - PSWeight is filled with ones
-			auto definecounts = corr_met_df.Define("abs_gen_weight", [](const float& x, const UInt_t& run, const UInt_t& lumi, const unsigned long long& event){
-            
-                                                    return std::abs(x);
-                                                    }, {"genWeight","run","luminosityBlock","event"})
-                                           .Define("CollMass_gen_presel", [](const rvec<float>& genpt,
-                                                                        const rvec<float>& geneta, 
-                                                                        const rvec<float>& genphi, 
-                                                                        const rvec<float>& genmass, 
-                                                                        const rvec<int>& genmotheridx,
-                                                                        const rvec<float>& genmuonpt,
-                                                                        const rvec<float>& genmuoneta,
-                                                                        const rvec<float>& genmuonphi,
-                                                                        const rvec<float>& genmuonmass,
-                                                                        const rvec<int>& genmuonpdgid,
-                                                                        const rvec<int>& genmuonmotheridx,
-                                                                        const rvec<int>& genmuonstatus,
-                                                                        const float& met_pt,
-                                                                        const float& met_phi){
-                                                        TLorentzVector tau, muon, met, highest_tau, highest_muon;
-                                                        float highest_mass = 0;
-                                                        int best_i = 0;
-                                                        int best_j = 0;
-                                                        for (unsigned int i = 0; i < genmuonpt.size(); i++){
-                                                                if( abs(genmuonpdgid[i]) == 15 and abs(genmuonpdgid[genmuonmotheridx[i]]) == 32){
-                                                                    tau.SetPtEtaPhiM(genmuonpt[i], genmuoneta[i], genmuonphi[i], genmuonmass[i]);
-                                                                    double mass_vis = 0;
-                                                                    for(unsigned int j = 0; j < genmuonpt.size(); j++){
-                                                                        if( abs(genmuonpdgid[j]) == 13 and abs(genmuonpdgid[genmuonmotheridx[j]]) == 32){
-                                                                            muon.SetPtEtaPhiM(genmuonpt[j], genmuoneta[j], genmuonphi[j], genmuonmass[j]);
-                                                                            mass_vis = (tau + muon).M();
-                                                                            if ( highest_mass < mass_vis){
-                                                                                highest_mass = mass_vis;
-                                                                                highest_tau = tau;
-                                                                                highest_muon = muon;
-                                                                                best_i = i;
-                                                                                best_j = j;
-                                                                            }
+                                                return std::abs(x);
+                                                }, {"genWeight","run","luminosityBlock","event"})
+                                       .Define("CollMass_gen_presel", [](const rvec<float>& genpt,
+                                                                    const rvec<float>& geneta, 
+                                                                    const rvec<float>& genphi, 
+                                                                    const rvec<float>& genmass, 
+                                                                    const rvec<int>& genmotheridx,
+                                                                    const rvec<float>& genmuonpt,
+                                                                    const rvec<float>& genmuoneta,
+                                                                    const rvec<float>& genmuonphi,
+                                                                    const rvec<float>& genmuonmass,
+                                                                    const rvec<int>& genmuonpdgid,
+                                                                    const rvec<int>& genmuonmotheridx,
+                                                                    const rvec<int>& genmuonstatus,
+                                                                    const float& met_pt,
+                                                                    const float& met_phi){
+                                                    TLorentzVector tau, muon, met, highest_tau, highest_muon;
+                                                    float highest_mass = 0;
+                                                    int best_i = 0;
+                                                    int best_j = 0;
+                                                    for (unsigned int i = 0; i < genmuonpt.size(); i++){
+                                                            if( abs(genmuonpdgid[i]) == 15 and abs(genmuonpdgid[genmuonmotheridx[i]]) == 32){
+                                                                tau.SetPtEtaPhiM(genmuonpt[i], genmuoneta[i], genmuonphi[i], genmuonmass[i]);
+                                                                double mass_vis = 0;
+                                                                for(unsigned int j = 0; j < genmuonpt.size(); j++){
+                                                                    if( abs(genmuonpdgid[j]) == 13 and abs(genmuonpdgid[genmuonmotheridx[j]]) == 32){
+                                                                        muon.SetPtEtaPhiM(genmuonpt[j], genmuoneta[j], genmuonphi[j], genmuonmass[j]);
+                                                                        mass_vis = (tau + muon).M();
+                                                                        if ( highest_mass < mass_vis){
+                                                                            highest_mass = mass_vis;
+                                                                            highest_tau = tau;
+                                                                            highest_muon = muon;
+                                                                            best_i = i;
+                                                                            best_j = j;
                                                                         }
                                                                     }
                                                                 }
-                                                        }
-                                                        return highest_mass;
-                                             },{"GenVisTau_pt","GenVisTau_eta","GenVisTau_phi","GenVisTau_mass","GenVisTau_genPartIdxMother","GenPart_pt","GenPart_eta","GenPart_phi","GenPart_mass","GenPart_pdgId","GenPart_genPartIdxMother","GenPart_statusFlags","GenMET_pt","GenMET_phi"});
-           
-            auto collmass_gen_presel_hist = definecounts.Histo1D(	{"CollMass_gen_preselection", "", 			6000u, 0, 6000}, 					"CollMass_gen_presel", "genWeight");
-            //auto top_pair_invmass = df.Histo1D(	{"top_pair_invmass", "", 			6000u, 0, 6000}, 					"top_pair_invmass");
-            hist_dict.emplace("Preselection", collmass_gen_presel_hist);
-            if(config::TT){
-                definecounts = definecounts.Define("top_pt_weight", calc_top_pt_reweighting, {"GenPart_pdgId", "GenPart_pt"});
-            }
-            else{
+                                                            }
+                                                    }
+                                                    return highest_mass;
+                                         },{"GenVisTau_pt","GenVisTau_eta","GenVisTau_phi","GenVisTau_mass","GenVisTau_genPartIdxMother","GenPart_pt","GenPart_eta","GenPart_phi","GenPart_mass","GenPart_pdgId","GenPart_genPartIdxMother","GenPart_statusFlags","GenMET_pt","GenMET_phi"});
+       
+        auto collmass_gen_presel_hist = definecounts.Histo1D(	{"CollMass_gen_preselection", "", 			6000u, 0, 6000}, 					"CollMass_gen_presel", "genWeight");
+        //auto top_pair_invmass = df.Histo1D(	{"top_pair_invmass", "", 			6000u, 0, 6000}, 					"top_pair_invmass");
+        hist_dict.emplace("Preselection", collmass_gen_presel_hist);
+        if(config::TT){
+            definecounts = definecounts.Define("top_pt_weight", calc_top_pt_reweighting, {"GenPart_pdgId", "GenPart_pt"});
+        }
+        else{
 
-                definecounts = definecounts.Define("top_pt_weight", [](){return (float) 1.;},{});
-            }
-            //if(config::TT ){
-            //    //definecounts = definecounts.Define("Mll", lepton_inv_mass, {"GenPart_pdgId", "GenPart_mass", "GenPart_pt", "GenPart_eta", "GenPart_phi", "GenPart_genPartIdxMother"});
-            //}
-            if(config::WW or config::TT ){
-                definecounts = definecounts.Define("Mll", lepton_inv_mass_ww, {"LHEPart_pdgId", "LHEPart_mass","LHEPart_pt","LHEPart_eta","LHEPart_phi","LHEPart_status"});
-            }
-            else if(config::DY){
-                definecounts = definecounts.Define("Mll", lepton_inv_mass_dy, {"LHEPart_pt","LHEPart_eta","LHEPart_phi","LHEPart_mass","LHEPart_pdgId"});
+            definecounts = definecounts.Define("top_pt_weight", [](){return (float) 1.;},{});
+        }
+        //if(config::TT ){
+        //    //definecounts = definecounts.Define("Mll", lepton_inv_mass, {"GenPart_pdgId", "GenPart_mass", "GenPart_pt", "GenPart_eta", "GenPart_phi", "GenPart_genPartIdxMother"});
+        //}
+        if(config::WW or config::TT ){
+            definecounts = definecounts.Define("Mll", lepton_inv_mass_ww, {"LHEPart_pdgId", "LHEPart_mass","LHEPart_pt","LHEPart_eta","LHEPart_phi","LHEPart_status"});
+        }
+        else if(config::DY){
+            definecounts = definecounts.Define("Mll", lepton_inv_mass_dy, {"LHEPart_pt","LHEPart_eta","LHEPart_phi","LHEPart_mass","LHEPart_pdgId"});
+            
+        }
+        else{
+            
+            definecounts = definecounts.Define("Mll",[](){ return (float) 0.;},{});
+        }
                 
-            }
-            else{
-                
-                definecounts = definecounts.Define("Mll",[](){ return (float) 0.;},{});
-            }
-					
-			// clean gen files
-            RNode gencleaned = definecounts;
-            if(config::cut_type != ""){
-                gencleaned = definecounts.Filter(clean_gen_file, {"LHE_HT", "LHEPart_pt", "LHEPart_eta", "LHEPart_phi", "LHEPart_mass", "LHEPart_pdgId", "LHEPart_status"}, "gen cleaning");
-            }
-            //auto lepton_pair_idx = gencleaned.Define("lepton_pair_idx",lepton_pair_idx, {"GenPart_pdgId","GenPart_genPartIdxMother"});
-            //auto lepton_pair_mass = lepton_pair_idx.Define("lepton_pair_invmass", mass_inv_idx, {"GenPart_pt", "GenPart_eta","GenPart_phi","GenPart_mass","top_pair_idx"});
+        // clean gen files
+        RNode gencleaned = definecounts;
+        if(config::cut_type != ""){
+            gencleaned = definecounts.Filter(clean_gen_file, {"LHE_HT", "LHEPart_pt", "LHEPart_eta", "LHEPart_phi", "LHEPart_mass", "LHEPart_pdgId", "LHEPart_status"}, "gen cleaning");
+        }
+        //auto lepton_pair_idx = gencleaned.Define("lepton_pair_idx",lepton_pair_idx, {"GenPart_pdgId","GenPart_genPartIdxMother"});
+        //auto lepton_pair_mass = lepton_pair_idx.Define("lepton_pair_invmass", mass_inv_idx, {"GenPart_pt", "GenPart_eta","GenPart_phi","GenPart_mass","top_pair_idx"});
 
-			
-			
-			// this function does all analysis steps
-			analyse(gencleaned, outFile);
-		};
+        
+        
+        // this function does all analysis steps
+        analyse(gencleaned, outFile);
+    };
 
-		
-        config::clean_memory();
-		hist_dict.clear();
-		hist_dict_2d.clear();
-		delete outFile;
-		
-	//	// disable multithreading
-	//	ROOT::DisableImplicitMT();
-	};
+    
+    config::clean_memory();
+    hist_dict.clear();
+    hist_dict_2d.clear();
+    delete outFile;
+    
+    //	// disable multithreading
+    //	ROOT::DisableImplicitMT();
 	return 0;
 }
