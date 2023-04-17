@@ -1,0 +1,10 @@
+{
+    "config": "cfg/2018/TTTo2L2Nu_2017.cfg", 
+    "files": [
+        "tree_2.root", 
+        "tree_3.root", 
+        "tree_4.root"
+    ], 
+    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/chschule/NanoAOD/NanoAODv7_Post/2017/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/", 
+    "sample": "TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8"
+}

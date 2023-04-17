@@ -1,0 +1,18 @@
+{
+    "config": "cfg/2018/mc_tt_2018.cfg", 
+    "files": [
+        "tree_10.root", 
+        "tree_11.root", 
+        "tree_1.root", 
+        "tree_2.root", 
+        "tree_3.root", 
+        "tree_4.root", 
+        "tree_5.root", 
+        "tree_6.root", 
+        "tree_7.root", 
+        "tree_8.root", 
+        "tree_9.root"
+    ], 
+    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/chschule/NanoAOD/NanoAODv7_Post/2018/ST_tW_top_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8/", 
+    "sample": "ST_tW_top_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8"
+}

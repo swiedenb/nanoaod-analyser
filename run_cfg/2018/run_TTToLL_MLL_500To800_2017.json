@@ -1,0 +1,11 @@
+{
+    "config": "cfg/2018/TTTo2L2Nu_Mbinned_2017.cfg", 
+    "files": [
+        "tree_1.root", 
+        "tree_2.root", 
+        "tree_3.root", 
+        "tree_4.root"
+    ], 
+    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/chschule/NanoAOD/NanoAODv7_Post/2017/TTToLL_MLL_500To800_0to20_NNPDF31_13TeV-powheg/", 
+    "sample": "TTToLL_MLL_500To800_0to20_NNPDF31_13TeV-powheg"
+}

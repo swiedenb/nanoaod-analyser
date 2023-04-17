@@ -1,3 +1,10 @@
 {
-"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv7_Post/2017/WWTo2L2Nu_MLL_600To1200_v1_NNPDF31_13TeV-powheg/" : "cfg/2018/WWTo2L2Nu_Mbinned.cfg"
+    "config": "cfg/2018/WWTo2L2Nu_Mbinned.cfg", 
+    "files": [
+        "tree_1.root", 
+        "tree_2.root", 
+        "tree_3.root"
+    ], 
+    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/chschule/NanoAOD/NanoAODv7_Post/2017/WWTo2L2Nu_MLL_600To1200_v1_NNPDF31_13TeV-powheg/", 
+    "sample": "WWTo2L2Nu_MLL_600To1200_v1_NNPDF31_13TeV-powheg"
 }

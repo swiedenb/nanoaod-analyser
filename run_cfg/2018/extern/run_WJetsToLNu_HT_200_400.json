@@ -1,5 +1,5 @@
 {
-"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv7_Post/2017/WJetsToLNu_HT-200To400_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/2018/WJetsToLNu.cfg"
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv7_Post/2018/WJetsToLNu_HT-200To400_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/2018/WJetsToLNu.cfg"
 }
 #"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/NanoAOD/nanoaodv7/2018/mc/WJetsToLNu_HT-70To100_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/mc_2018.cfg",
 #"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/NanoAOD/nanoaodv7/2018/mc/WJetsToLNu_HT-100To200_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/mc_2018.cfg",

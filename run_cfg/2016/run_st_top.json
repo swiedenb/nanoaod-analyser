@@ -1,3 +1,9 @@
 {
-"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv7_Post/2016/ST_tW_top_5f_NoFullyHadronicDecays_13TeV-powheg_TuneCUETP8M1/" :  "cfg/mc_2016.cfg"
+    "config": "cfg/mc_2016.cfg", 
+    "files": [
+        "tree_1_4MTJGRZY.root", 
+        "tree_2_VL6X8UR4.root"
+    ], 
+    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/chschule/NanoAOD/NanoAODv7_Post/2016/ST_tW_top_5f_NoFullyHadronicDecays_13TeV-powheg_TuneCUETP8M1/", 
+    "sample": "ST_tW_top_5f_NoFullyHadronicDecays_13TeV-powheg_TuneCUETP8M1"
 }

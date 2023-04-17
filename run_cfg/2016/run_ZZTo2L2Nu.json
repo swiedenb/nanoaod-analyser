@@ -1,3 +1,14 @@
 {
-"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv7_Post/2016/ZZTo2L2Nu_13TeV_powheg_pythia8/" : "cfg/mc_2016.cfg"
+    "config": "cfg/mc_2016.cfg", 
+    "files": [
+        "tree_1.root", 
+        "tree_2.root", 
+        "tree_3.root", 
+        "tree_4.root", 
+        "tree_5.root", 
+        "tree_6.root", 
+        "tree_7.root"
+    ], 
+    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/chschule/NanoAOD/NanoAODv7_Post/2016/ZZTo2L2Nu_13TeV_powheg_pythia8/", 
+    "sample": "ZZTo2L2Nu_13TeV_powheg_pythia8"
 }

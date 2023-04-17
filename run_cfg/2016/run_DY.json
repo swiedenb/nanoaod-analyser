@@ -1,3 +1,28 @@
 {
-"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv7_Post/2016/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/" :  "cfg/mc_2016_dy_bulk.cfg"
+    "config": "cfg/mc_2016_dy_bulk.cfg", 
+    "files": [
+        "tree_10_ZU9F4WMS.root", 
+        "tree_11_93ZXYONH.root", 
+        "tree_12_4BIW1VZ8.root", 
+        "tree_13_HESMVGC6.root", 
+        "tree_15_68AEVM49.root", 
+        "tree_16_9TUBKV1D.root", 
+        "tree_17_20PZVS5F.root", 
+        "tree_18_8V5Q19XU.root", 
+        "tree_19_SX5HONJZ.root", 
+        "tree_1_VUKH1E7I.root", 
+        "tree_20_5IKAJ3L4.root", 
+        "tree_21_13OY5K6T.root", 
+        "tree_22_JTSG5HLQ.root", 
+        "tree_23_ZU5KN6FB.root", 
+        "tree_24_2BIS8OLG.root", 
+        "tree_2_P6GC2DA4.root", 
+        "tree_4_VFMX5ET0.root", 
+        "tree_5_D9ICB6OZ.root", 
+        "tree_7_ODFY3U1H.root", 
+        "tree_8_BY8U6ZWV.root", 
+        "tree_9_VW0LN1KE.root"
+    ], 
+    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/chschule/NanoAOD/NanoAODv7_Post/2016/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/", 
+    "sample": "DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8"
 }

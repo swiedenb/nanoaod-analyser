@@ -1,0 +1,14 @@
+{
+    "config": "cfg/mc_2016.cfg", 
+    "files": [
+        "tree_1_SB7W3RZV.root", 
+        "tree_2_EYM8R0OX.root", 
+        "tree_3_B8CTYZVG.root", 
+        "tree_4_QNC5A8TW.root", 
+        "tree_5_HWBJL5D2.root", 
+        "tree_6_0QMPTS8E.root", 
+        "tree_7_M84SKGB3.root"
+    ], 
+    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/chschule/NanoAOD/NanoAODv7_Post/2016/ST_tW_top_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1/", 
+    "sample": "ST_tW_top_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1"
+}

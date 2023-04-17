@@ -1,11 +1,18 @@
 {
-"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv7_Post/2017/WJetsToLNu_HT-2500ToInf_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/2017/WJetsToLNu.cfg"
+    "config": "cfg/2017/WJetsToLNu.cfg", 
+    "files": [
+        "tree_10_Q8OP6KZF.root", 
+        "tree_11_BZ03GSOE.root", 
+        "tree_12_Z5NMY0FX.root", 
+        "tree_1_5HV3XUDC.root", 
+        "tree_2_SD8CZVQ3.root", 
+        "tree_3_LVYT3BE8.root", 
+        "tree_4_JXBCP24A.root", 
+        "tree_5_MU7ZJPQ3.root", 
+        "tree_6_IY1DHPNC.root", 
+        "tree_7_1NZOYQR2.root", 
+        "tree_9_W6LPOS83.root"
+    ], 
+    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/chschule/NanoAOD/NanoAODv7_Post/2017/WJetsToLNu_HT-2500ToInf_TuneCP5_13TeV-madgraphMLM-pythia8/", 
+    "sample": "WJetsToLNu_HT-2500ToInf_TuneCP5_13TeV-madgraphMLM-pythia8"
 }
-#"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/NanoAOD/nanoaodv7/2018/mc/WJetsToLNu_HT-70To100_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/mc_2018.cfg",
-#"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/NanoAOD/nanoaodv7/2018/mc/WJetsToLNu_HT-100To200_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/mc_2018.cfg",
-#"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/NanoAOD/nanoaodv7/2018/mc/WJetsToLNu_HT-200To400_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/mc_2018.cfg",
-#"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/NanoAOD/nanoaodv7/2018/mc/WJetsToLNu_HT-400To600_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/mc_2018.cfg",
-#"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/NanoAOD/nanoaodv7/2018/mc/WJetsToLNu_HT-600To800_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/mc_2018.cfg",
-#"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/NanoAOD/nanoaodv7/2018/mc/WJetsToLNu_HT-800To1200_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/mc_2018.cfg",
-#"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/NanoAOD/nanoaodv7/2018/mc/WJetsToLNu_HT-1200To2500_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/mc_2018.cfg",
-#"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/NanoAOD/nanoaodv7/2018/mc/WJetsToLNu_HT-2500ToInf_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/mc_2018.cfg"
