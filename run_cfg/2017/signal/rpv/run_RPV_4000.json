@@ -1,3 +1,8 @@
 {
-"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/swiedenb/NanoAOD/NanoAODv7_Post/2017/RPVresonantToMuTau_M-4000_LLE_LQD-001_TuneCP5_13TeV-calchep-pythia8/" : "cfg/signal_2017.cfg"
+    "config": "cfg/signal_2017.cfg", 
+    "files": [
+        "tree_1_19GQ0UVI.root"
+    ], 
+    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/swiedenb/NanoAOD/NanoAODv7_Post/2017/RPVresonantToMuTau_M-4000_LLE_LQD-001_TuneCP5_13TeV-calchep-pythia8/", 
+    "sample": "RPVresonantToMuTau_M-4000_LLE_LQD-001_TuneCP5_13TeV-calchep-pythia8"
 }

@@ -337,10 +337,11 @@ float correct_met_single(
             float met_pt = sqrt(pow(met_px,2) + pow(met_py,2)); 
             met_p4.SetPxPyPzE(met_px,met_py,0,met_pt);
         }
-        float met_px = met_p4.Px() + tau_p4.Px() - tau_es_p4.Px();
-        float met_py = met_p4.Py() + tau_p4.Py() - tau_es_p4.Py();
-        float met_pt = sqrt(pow(met_px,2) + pow(met_py,2)); 
-        met_p4.SetPxPyPzE(met_px,met_py,0,met_pt);
+
+        //float met_px = met_p4.Px() + tau_p4.Px() - tau_es_p4.Px();
+        //float met_py = met_p4.Py() + tau_p4.Py() - tau_es_p4.Py();
+        //float met_pt = sqrt(pow(met_px,2) + pow(met_py,2)); 
+        //met_p4.SetPxPyPzE(met_px,met_py,0,met_pt);
 
         return met_p4.Pt();
         
@@ -384,10 +385,10 @@ float correct_met_single_phi(
             float met_pt = sqrt(pow(met_px,2) + pow(met_py,2)); 
             met_p4.SetPxPyPzE(met_px,met_py,0,met_pt);
         }
-        float met_px = met_p4.Px() + tau_p4.Px() - tau_es_p4.Px();
-        float met_py = met_p4.Py() + tau_p4.Py() - tau_es_p4.Py();
-        float met_pt = sqrt(pow(met_px,2) + pow(met_py,2)); 
-        met_p4.SetPxPyPzE(met_px,met_py,0,met_pt);
+        //float met_px = met_p4.Px() + tau_p4.Px() - tau_es_p4.Px();
+        //float met_py = met_p4.Py() + tau_p4.Py() - tau_es_p4.Py();
+        //float met_pt = sqrt(pow(met_px,2) + pow(met_py,2)); 
+        //met_p4.SetPxPyPzE(met_px,met_py,0,met_pt);
 
         return met_p4.Phi();
         
@@ -816,7 +817,19 @@ void create_datadriven_hists(	RNode df,
 	auto njets = df.Histo1D(		{((TString) "nJets" + stringcopy), "", 					40u, 0, 40}, 			"nJet", 					weight_column);
 	auto nvtxgood = df.Histo1D(	{((TString) "nvtx_good" + stringcopy), "", 				80u, 0, 80}, 			"PV_npvsGood", 				weight_column);
     if( !config::runOnData){
-        df = df.Define("no_pileupweight","total_weight / pileup_weight");
+        df = df.Define("no_pileupweight",[](const float genweight,
+                                            const float prefire,
+                                            const float trigger,
+                                            const float muoniso,
+                                            const float muonid,
+                                            const float ww,
+                                            const float topq,
+                                            const float toppdf,
+                                            const float toppt,
+                                            const float fr,
+                                            const float muonreco){
+                                            return genweight *  prefire * trigger * muoniso * muonid * ww * topq * toppdf * toppt * muonreco * fr;
+                                                                        },{"genWeight","PrefiringWeight","TriggerScaleFactor","MuonISOScaleFactor","MuonIDScaleFactor","WWshape","TopQ","TopPDF","top_pt_weight","FakeRate","MuonReco"});
         auto nvtxgood_nopu = df.Histo1D(	{((TString) "nvtx_good_nopu" + stringcopy), "", 				80u, 0, 80}, 			"PV_npvsGood", 				"no_pileupweight");
         hist_dict.emplace(name, nvtxgood_nopu);
     }
@@ -967,7 +980,21 @@ void create_hists(	RNode df,
 	auto nvtx = df.Histo1D(		{((TString) "nvtx" + stringcopy), "", 					80u, 0, 80}, 			"PV_npvs", 					weight_column);
 	auto njets = df.Histo1D(		{((TString) "nJets" + stringcopy), "", 					40u, 0, 40}, 			"nJet", 					weight_column);
     if( !config::runOnData){
-        df = df.Define("no_pileupweight","total_weight / pileup_weight");
+        df = df.Define("no_pileupweight",[](const float genweight,
+                                            const float taujet,
+                                            const float tauele,
+                                            const float taumuon,
+                                            const float prefire,
+                                            const float trigger,
+                                            const float muoniso,
+                                            const float muonid,
+                                            const float ww,
+                                            const float topq,
+                                            const float toppdf,
+                                            const float toppt,
+                                            const float muonreco){
+                                            return genweight * taujet * tauele * taumuon * prefire * trigger * muoniso * muonid * ww * topq * toppdf * toppt * muonreco;
+                                                                        },{"genWeight","TauJetFakeScaleFactor__","TauEleFakeScaleFactor__","TauMuonFakeScaleFactor__","PrefiringWeight","TriggerScaleFactor","MuonISOScaleFactor","MuonIDScaleFactor","WWshape","TopQ","TopPDF","top_pt_weight","MuonReco"});
         auto nvtxgood_nopu = df.Histo1D(	{((TString) "nvtx_good_nopu" + stringcopy), "", 				80u, 0, 80}, 			"PV_npvsGood", 				"no_pileupweight");
         hist_dict.emplace(name, nvtxgood_nopu);
     }
@@ -3342,8 +3369,9 @@ int main (int argc, char* argv[]) {
         auto definecounts = corr_met_df.Define("abs_gen_weight", [](const float& x, const UInt_t& run, const UInt_t& lumi, const unsigned long long& event){
         
                                                 return std::abs(x);
-                                                }, {"genWeight","run","luminosityBlock","event"})
-                                       .Define("CollMass_gen_presel", [](const rvec<float>& genpt,
+                                                }, {"genWeight","run","luminosityBlock","event"});
+          if(config::runOnSignal){
+                    definecounts = definecounts.Define("CollMass_gen_presel", [](const rvec<float>& genpt,
                                                                     const rvec<float>& geneta, 
                                                                     const rvec<float>& genphi, 
                                                                     const rvec<float>& genmass, 
@@ -3362,11 +3390,11 @@ int main (int argc, char* argv[]) {
                                                     int best_i = 0;
                                                     int best_j = 0;
                                                     for (unsigned int i = 0; i < genmuonpt.size(); i++){
-                                                            if( abs(genmuonpdgid[i]) == 15 and abs(genmuonpdgid[genmuonmotheridx[i]]) == 32){
+                                                            if( (abs(genmuonpdgid[i]) == 15 and abs(genmuonpdgid[genmuonmotheridx[i]]) == 32) and config::runOnZprime){
                                                                 tau.SetPtEtaPhiM(genmuonpt[i], genmuoneta[i], genmuonphi[i], genmuonmass[i]);
                                                                 double mass_vis = 0;
                                                                 for(unsigned int j = 0; j < genmuonpt.size(); j++){
-                                                                    if( abs(genmuonpdgid[j]) == 13 and abs(genmuonpdgid[genmuonmotheridx[j]]) == 32){
+                                                                    if( (abs(genmuonpdgid[j]) == 13 and abs(genmuonpdgid[genmuonmotheridx[j]]) == 32) ){
                                                                         muon.SetPtEtaPhiM(genmuonpt[j], genmuoneta[j], genmuonphi[j], genmuonmass[j]);
                                                                         mass_vis = (tau + muon).M();
                                                                         if ( highest_mass < mass_vis){
@@ -3379,10 +3407,88 @@ int main (int argc, char* argv[]) {
                                                                     }
                                                                 }
                                                             }
+                                                            else if( abs(genmuonpdgid[i] == 15) and not config::runOnZprime){
+                                                                tau.SetPtEtaPhiM(genmuonpt[i], genmuoneta[i], genmuonphi[i], genmuonmass[i]);
+                                                                double mass_vis = 0;
+                                                                for(unsigned int j = 0; j < genmuonpt.size(); j++){
+                                                                    if( (abs(genmuonpdgid[j]) == 13 and genmuonmotheridx[j] == genmuonmotheridx[i]) and genmuonstatus[i] == genmuonstatus[j]){
+                                                                        muon.SetPtEtaPhiM(genmuonpt[j], genmuoneta[j], genmuonphi[j], genmuonmass[j]);
+                                                                        mass_vis = (tau + muon).M();
+                                                                        if ( highest_mass < mass_vis){
+                                                                            highest_mass = mass_vis;
+                                                                            highest_tau = tau;
+                                                                            highest_muon = muon;
+                                                                            best_i = i;
+                                                                            best_j = j;
+                                                                        }
+                                                                    }
+                                                                }
+                                                                
+                                                            }
                                                     }
                                                     return highest_mass;
+                                       
                                          },{"GenVisTau_pt","GenVisTau_eta","GenVisTau_phi","GenVisTau_mass","GenVisTau_genPartIdxMother","GenPart_pt","GenPart_eta","GenPart_phi","GenPart_mass","GenPart_pdgId","GenPart_genPartIdxMother","GenPart_statusFlags","GenMET_pt","GenMET_phi"});
-       
+                }
+               // else{
+               //     definecounts = definecounts.Define("CollMass_gen_presel", [](const rvec<int>& pdgid,
+               //                                                          const rvec<float>& mass,
+               //                                                          const rvec<float>& pt,
+               //                                                          const rvec<float>& eta,
+               //                                                          const rvec<float>& phi,
+               //                                                          const rvec<int>& status
+               //                                                     ){
+               //                                     TLorentzVector tau, muon, met, highest_tau, highest_muon;
+               //                                     float highest_mass = 0;
+               //                                     int best_i = 0;
+               //                                     int best_j = 0;
+               //                                     for (unsigned int i = 0; i < pt.size(); i++){
+               //                                             if( (abs(pdgid[i]) == 15) and status[i] == 1){
+               //                                                 tau.SetPtEtaPhiM(pt[i], eta[i], phi[i], mass[i]);
+               //                                                 double mass_vis = 0;
+               //                                                 for(unsigned int j = 0; j < pt.size(); j++){
+               //                                                     if( abs(pdgid[j]) == 13 and status[j] == 1){
+               //                                                         muon.SetPtEtaPhiM(pt[j], eta[j], phi[j], mass[j]);
+               //                                                         mass_vis = (tau + muon).M();
+               //                                                         if ( highest_mass < mass_vis){
+               //                                                             highest_mass = mass_vis;
+               //                                                             highest_tau = tau;
+               //                                                             highest_muon = muon;
+               //                                                             best_i = i;
+               //                                                             best_j = j;
+               //                                                         }
+               //                                                     }
+               //                                                 }
+               //                                             }
+               //                                     }
+               //                                     //for (unsigned int i = 0; i < genmuonpt.size(); i++){
+               //                                     //        if( (abs(genmuonpdgid[i]) == 15 and abs(genmuonpdgid[genmuonmotheridx[i]]) == 32)){
+               //                                     //            tau.SetPtEtaPhiM(genmuonpt[i], genmuoneta[i], genmuonphi[i], genmuonmass[i]);
+               //                                     //            double mass_vis = 0;
+               //                                     //            for(unsigned int j = 0; j < genmuonpt.size(); j++){
+               //                                     //                if( (abs(genmuonpdgid[j]) == 13 and abs(genmuonpdgid[genmuonmotheridx[j]]) == 32) ){
+               //                                     //                    muon.SetPtEtaPhiM(genmuonpt[j], genmuoneta[j], genmuonphi[j], genmuonmass[j]);
+               //                                     //                    mass_vis = (tau + muon).M();
+               //                                     //                    if ( highest_mass < mass_vis){
+               //                                     //                        highest_mass = mass_vis;
+               //                                     //                        highest_tau = tau;
+               //                                     //                        highest_muon = muon;
+               //                                     //                        best_i = i;
+               //                                     //                        best_j = j;
+               //                                     //                    }
+               //                                     //                }
+               //                                     //            }
+               //                                     //        }
+               //                                     //}
+               //                                     return highest_mass;
+               //                          },{"LHEPart_pdgId","LHEPart_mass","LHEPart_pt","LHEPart_eta","LHEPart_phi","LHEPart_status"});
+               //                          
+               //                          //},{"GenVisTau_pt","GenVisTau_eta","GenVisTau_phi","GenVisTau_mass","GenVisTau_genPartIdxMother","GenPart_pt","GenPart_eta","GenPart_phi","GenPart_mass","GenPart_pdgId","GenPart_genPartIdxMother","GenPart_statusFlags","GenMET_pt","GenMET_phi"});
+               //     }
+                
+        else{
+            definecounts = definecounts.Define("CollMass_gen_presel",[](){ return (float) 0.;},{});
+        }
         auto collmass_gen_presel_hist = definecounts.Histo1D(	{"CollMass_gen_preselection", "", 			6000u, 0, 6000}, 					"CollMass_gen_presel", "genWeight");
         //auto top_pair_invmass = df.Histo1D(	{"top_pair_invmass", "", 			6000u, 0, 6000}, 					"top_pair_invmass");
         hist_dict.emplace("Preselection", collmass_gen_presel_hist);

@@ -1,0 +1,6 @@
+{
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/Data2018TauRunA/" :  "cfg/data_2018_closure.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/Data2018TauRunB/" :  "cfg/data_2018_closure.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/Data2018TauRunC/" :  "cfg/data_2018_closure.cfg",
+"dcap://grid-dcap-extern.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv6/2018/Data2018TauRunD/" :  "cfg/data_2018_closure.cfg"
+}

@@ -1,3 +1,8 @@
 {
-"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv7_Post/2018/DYJetsToLL_M-700to800_TuneCP5_13TeV-amcatnloFXFX-pythia8/" :  "cfg/mc_2018_closure.cfg"
+    "config": "cfg/mc_2018_closure.cfg", 
+    "files": [
+        "tree_1.root"
+    ], 
+    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/chschule/NanoAOD/NanoAODv7_Post/2018/DYJetsToLL_M-700to800_TuneCP5_13TeV-amcatnloFXFX-pythia8/", 
+    "sample": "DYJetsToLL_M-700to800_TuneCP5_13TeV-amcatnloFXFX-pythia8"
 }

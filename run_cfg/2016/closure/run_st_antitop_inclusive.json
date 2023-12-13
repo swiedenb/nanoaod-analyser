@@ -1,3 +1,17 @@
 {
-"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv7_Post/2016/ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1/" :  "cfg/mc_2016_closure.cfg"
+    "config": "cfg/mc_2016_closure.cfg", 
+    "files": [
+        "tree_10_HMT2JY3Q.root", 
+        "tree_1_5ALYMIWT.root", 
+        "tree_2_ESVWY80A.root", 
+        "tree_3_JCSMXKBA.root", 
+        "tree_4_1JE2ST0F.root", 
+        "tree_5_DARUMKEZ.root", 
+        "tree_6_7VDI5980.root", 
+        "tree_7_6EBN8S0Q.root", 
+        "tree_8_AM8NX0YW.root", 
+        "tree_9_F7Q2JIU5.root"
+    ], 
+    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/chschule/NanoAOD/NanoAODv7_Post/2016/ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1/", 
+    "sample": "ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1"
 }

@@ -1,3 +1,9 @@
 {
-"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv7_Post/2017/WZTo2L2Q_13TeV_amcatnloFXFX_madspin_pythia8/" : "cfg/2018/WZTo2L2Q_closure.cfg"
+    "config": "cfg/2018/WZTo2L2Q_closure.cfg", 
+    "files": [
+        "tree_1.root", 
+        "tree_3.root"
+    ], 
+    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/chschule/NanoAOD/NanoAODv7_Post/2017/WZTo2L2Q_13TeV_amcatnloFXFX_madspin_pythia8/", 
+    "sample": "WZTo2L2Q_13TeV_amcatnloFXFX_madspin_pythia8"
 }

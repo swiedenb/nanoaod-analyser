@@ -1,3 +1,13 @@
 {
-"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv7_Post/2018/ZPrimeToMuTau_M_4500_TuneCP5_13TeV_pythia8/" : "cfg/mc_2018.cfg"
+    "config": "cfg/signal_2017.cfg", 
+    "files": [
+        "tree_1_DL8VU0Y4.root", 
+        "tree_2_1VRTBOF4.root", 
+        "tree_3_Z86AVP32.root", 
+        "tree_4_IL09W8HX.root", 
+        "tree_5_AONPXKGZ.root", 
+        "tree_6_F9LMHKTV.root"
+    ], 
+    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/swiedenb/NanoAOD/NanoAODv7_Post/2017/ZPrimeToMuTau_M_4500_TuneCP5_13TeV_pythia8/", 
+    "sample": "ZPrimeToMuTau_M_4500_TuneCP5_13TeV_pythia8"
 }

@@ -1,3 +1,21 @@
 {
-"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv7_Post/2017/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/" :  "cfg/mc_2017_dy_bulk_closure.cfg"
+    "config": "cfg/mc_2017_dy_bulk_closure.cfg", 
+    "files": [
+        "tree_10_QIEXF4NW.root", 
+        "tree_11_94O6E1TN.root", 
+        "tree_12_S9BKFXJE.root", 
+        "tree_13_6F75JP3S.root", 
+        "tree_14_X8BR52Y6.root", 
+        "tree_15_9LGP0XZN.root", 
+        "tree_1_6S4PW08L.root", 
+        "tree_2_D397V5CW.root", 
+        "tree_3_ZFHCNRIO.root", 
+        "tree_4_KYWVL7O2.root", 
+        "tree_5_571QUF40.root", 
+        "tree_7_YB1QIPFA.root", 
+        "tree_8_NOTIUVKG.root", 
+        "tree_9_GXM64LIY.root"
+    ], 
+    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/chschule/NanoAOD/NanoAODv7_Post/2017/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/", 
+    "sample": "DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8"
 }

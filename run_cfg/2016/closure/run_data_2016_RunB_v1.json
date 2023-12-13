@@ -1,3 +1,12 @@
 {
-"dcap://grid-dcap.physik.rwth-aachen.de/pnfs/physik.rwth-aachen.de/cms/store/user/chschule/NanoAOD/NanoAODv7_Post/2016/SingleMuonRun2016B-02Apr2020_ver1-v1/" :  "cfg/data_2016_B_closure.cfg"
+    "config": "cfg/data_2016_B_closure.cfg", 
+    "files": [
+        "tree_1_KDC9SGN7.root", 
+        "tree_2_AX8GPOZ7.root", 
+        "tree_3_DRVNG0S5.root", 
+        "tree_4_74SDTW18.root", 
+        "tree_5_QIBPKXW2.root"
+    ], 
+    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/chschule/NanoAOD/NanoAODv7_Post/2016/SingleMuonRun2016B-02Apr2020_ver1-v1/", 
+    "sample": "SingleMuonRun2016B-02Apr2020_ver1-v1"
 }

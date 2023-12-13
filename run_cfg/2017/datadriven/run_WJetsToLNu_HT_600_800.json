@@ -1,11 +1,16 @@
 {
-"davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/chschule/NanoAOD/NanoAODv7_Post/2017/WJetsToLNu_HT-600To800_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/2017/WJetsToLNu_calc_datadriven.cfg"
+    "config": "cfg/2017/WJetsToLNu_calc_datadriven.cfg", 
+    "files": [
+        "tree_10_J9ZOWFDX.root", 
+        "tree_11_DFKB34VM.root", 
+        "tree_1_DK98S6TM.root", 
+        "tree_2_PC7EGH9J.root", 
+        "tree_3_723SA1J5.root", 
+        "tree_4_L7T3MIBG.root", 
+        "tree_5_430J2O8T.root", 
+        "tree_6_0QMHVYA1.root", 
+        "tree_7_8NVUKEBP.root"
+    ], 
+    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/chschule/NanoAOD/NanoAODv7_Post/2017/WJetsToLNu_HT-600To800_TuneCP5_13TeV-madgraphMLM-pythia8/", 
+    "sample": "WJetsToLNu_HT-600To800_TuneCP5_13TeV-madgraphMLM-pythia8"
 }
-#"davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/swiedenb/NanoAOD/nanoaodv7/2018/mc/WJetsToLNu_HT-70To100_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/mc_2018_calc_datadriven.cfg",
-#"davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/swiedenb/NanoAOD/nanoaodv7/2018/mc/WJetsToLNu_HT-100To200_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/mc_2018_calc_datadriven.cfg",
-#"davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/swiedenb/NanoAOD/nanoaodv7/2018/mc/WJetsToLNu_HT-200To400_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/mc_2018_calc_datadriven.cfg",
-#"davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/swiedenb/NanoAOD/nanoaodv7/2018/mc/WJetsToLNu_HT-400To600_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/mc_2018_calc_datadriven.cfg",
-#"davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/swiedenb/NanoAOD/nanoaodv7/2018/mc/WJetsToLNu_HT-600To800_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/mc_2018_calc_datadriven.cfg",
-#"davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/swiedenb/NanoAOD/nanoaodv7/2018/mc/WJetsToLNu_HT-800To1200_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/mc_2018_calc_datadriven.cfg",
-#"davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/swiedenb/NanoAOD/nanoaodv7/2018/mc/WJetsToLNu_HT-1200To2500_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/mc_2018_calc_datadriven.cfg",
-#"davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/swiedenb/NanoAOD/nanoaodv7/2018/mc/WJetsToLNu_HT-2500ToInf_TuneCP5_13TeV-madgraphMLM-pythia8/" : "cfg/mc_2018_calc_datadriven.cfg"
