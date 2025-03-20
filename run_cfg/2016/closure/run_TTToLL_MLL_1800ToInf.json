@@ -1,8 +1,0 @@
-{
-    "config": "cfg/2016/TTTo2L2Nu_Mbinned_closure.cfg", 
-    "files": [
-        "tree_1_1CXKV4E2.root"
-    ], 
-    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/chschule/NanoAOD/NanoAODv7_Post/2016/TTToLL_MLL_1800ToInf_TuneCUETP8M1_13TeV-powheg-pythia8/", 
-    "sample": "TTToLL_MLL_1800ToInf_TuneCUETP8M1_13TeV-powheg-pythia8"
-}

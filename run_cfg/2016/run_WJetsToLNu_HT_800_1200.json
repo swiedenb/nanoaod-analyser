@@ -1,8 +1,0 @@
-{
-    "config": "cfg/2016/WJetsToLNu.cfg", 
-    "files": [
-        "tree_1_3QGI7LYN.root"
-    ], 
-    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/chschule/NanoAOD/NanoAODv7_Post/2016/WJetsToLNu_HT-800To1200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/", 
-    "sample": "WJetsToLNu_HT-800To1200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8"
-}

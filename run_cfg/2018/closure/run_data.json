@@ -1,6 +1,0 @@
-{
-    "config": "cfg/data_2018.cfg", 
-    "files": [], 
-    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/chschule/NanoAOD/NanoAODv7_Post/2018/Data2018MuonRunC/", 
-    "sample": "Data2018MuonRunC"
-}

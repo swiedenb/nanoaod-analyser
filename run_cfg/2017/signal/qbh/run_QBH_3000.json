@@ -1,8 +1,0 @@
-{
-    "config": "cfg/signal_2017.cfg", 
-    "files": [
-        "tree_1_03G2HYRC.root"
-    ], 
-    "folder": "davs://grid-webdav.physik.rwth-aachen.de:2889/store/user/swiedenb/NanoAOD/NanoAODv7_Post/2017/QBHtoMuTau_n4_ADD_M3000_TuneCP5_13TeV-QBH-pythia8/", 
-    "sample": "QBHtoMuTau_n4_ADD_M3000_TuneCP5_13TeV-QBH-pythia8"
-}
